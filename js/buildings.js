@@ -797,6 +797,7 @@ function updateSun() {
 
 function updateSunPanel() {
   $('sun').hidden = !(is3D && sun.on);
+  updatePhoneCards(is3D && sun.on);
 }
 
 function toggleSun() {

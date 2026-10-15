@@ -254,16 +254,13 @@ function stopRainLive() {
   $('rain-live-toggle').setAttribute('aria-pressed', 'false');
   mapReady.then(clearRadarLayers);
   updateRain();
+  updatePhoneCards(false);
 }
 
 $('rain-live-toggle').addEventListener('click', () => {
   if (radar.active) { stopRainLive(); return; }
   startRainLive();
-  // On a phone the panel lives in the Opties sheet.
-  if (phone.matches) {
-    document.body.classList.add('controls-open');
-    $('controls-toggle').setAttribute('aria-expanded', 'true');
-  }
+  updatePhoneCards(true);
 });
 $('rainlive-close').addEventListener('click', stopRainLive);
 $('radar-play').addEventListener('click', () => setRadarPlaying(!radar.playing));

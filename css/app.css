@@ -262,6 +262,11 @@ button.link:hover { text-decoration: underline; }
   #controls-toggle[aria-expanded="true"] { background: var(--accent); color: var(--accent-text); }
   #map-controls { display: none; position: fixed; inset: 96px 10px 140px; z-index: 15; overflow-y: auto; flex-direction: column; gap: 8px; pointer-events: auto; }
   body.controls-open #map-controls { display: flex; }
+  /* Only the active Regen/Zon panels, as cards at the top; the map stays visible below. */
+  body.show-cards:not(.controls-open) #map-controls { display: flex; bottom: auto; max-height: calc(100% - 96px - 140px); }
+  body.show-cards:not(.controls-open) #map-controls > :not(#left-stack):not(#sun),
+  body.show-cards:not(.controls-open) #left-stack > :not(#rainlive) { display: none; }
+  #rainlive details, #rainlive > p.hint:last-child { display: none; }
   #map-controls > .mapctl, #map-controls > #right-stack, #map-controls > #left-stack { position: static; width: auto; max-height: none; }
   #map-controls #right-stack { align-items: stretch; }
   #map-controls #tools, #map-controls #envlayer { width: auto; }
