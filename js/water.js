@@ -576,6 +576,21 @@ $('flood-scenario').addEventListener('change', () => {
   waterScenario = $('flood-scenario').value;
   loadWater();
 });
+
+// The Overstroming button opens the panel; closing it also clears the water.
+const floodPanel = { open: false };
+function setFloodPanel(open) {
+  floodPanel.open = open;
+  $('flood').hidden = !open;
+  $('flood-toggle').setAttribute('aria-pressed', open);
+  if (!open && waterScenario) {
+    $('flood-scenario').value = '';
+    $('flood-scenario').dispatchEvent(new Event('change'));
+  }
+  updatePhoneCards(open);
+}
+$('flood-toggle').addEventListener('click', () => setFloodPanel(!floodPanel.open));
+$('flood-close').addEventListener('click', () => setFloodPanel(false));
 $('flood-level').addEventListener('input', applyWaterLevel);
 
 // ---------- 3D water (three.js) ----------

@@ -3,7 +3,7 @@
 
 Starts Chrome headless, drives the app over the DevTools protocol and checks
 that the main features work at three test addresses: the report, the water
-simulation (does the water actually rise?), 3D, cartoon, sun and night,
+simulation (does the water actually rise?), 3D, sun and night,
 trees, measuring and the environment layers. Console errors fail the run.
 Screenshots go to tests/output/.
 
@@ -174,6 +174,8 @@ def open_address(b, base_url, address_id):
 
 
 def choose_scenario(b, value):
+    if b.js("document.getElementById('flood').hidden"):
+        b.js("document.getElementById('flood-toggle').click()")
     b.js(f"(() => {{ const s = document.getElementById('flood-scenario'); s.value = '{value}'; s.dispatchEvent(new Event('change')); }})()")
     return b.wait_for("(() => { const t = document.getElementById('flood-info').textContent; return !!water || (t && !t.endsWith('…')); })()", 120)
 
@@ -226,6 +228,10 @@ def test_3d(b, r, key, with_night=True):
     r.check(f'{key}: 3D-scène geladen', b.wait_for('sceneFeatures.length > 0 && !!three.scene', 120),
             f"{b.js('sceneFeatures.length')} delen, {b.js('detailById.size')} met dakvorm")
     r.check(f'{key}: bomen in 3D', b.wait_for('trees.heightsFor === current', 90), f"{b.js('trees.list.length')} bomen")
+    if b.js('trees.list.length'):
+        b.pump(2)
+        meshes = b.js("(() => { let n = 0; three.scene && three.scene.traverse(o => { if (o.isInstancedMesh && o.userData.tree) n++; }); return n; })()")
+        r.check(f'{key}: bomen standaard getekend in 3D', meshes == 2, f'{meshes} boomlagen')
     b.js("map.jumpTo({center: [current.lon, current.lat], zoom: 17.8, pitch: 60, bearing: 20})")
     b.pump(3)
     b.screenshot(f'{key}-3d')
@@ -243,10 +249,6 @@ def test_3d(b, r, key, with_night=True):
         r.check(f'{key}: kwaliteit Snel', ok, f"{full} → {b.js('sceneFeatures.length')} delen, pixelratio {b.js('map.getPixelRatio()')}")
         b.js("document.querySelector('input[name=quality][value=mooi]').click()")
         r.check(f'{key}: terug naar Mooi', b.wait_for('quality.mode === "mooi" && detailById.size > 0', 90))
-    b.js("document.getElementById('cartoon').click()")
-    r.check(f'{key}: cartoon', b.wait_for("cartoon && !!map.getLayer('three-3d')", 30))
-    b.pump(3)
-    b.screenshot(f'{key}-cartoon')
     if with_night:
         b.js("document.getElementById('sun-toggle').click()")
         b.js("(() => { document.getElementById('sun-date').value = '2027-01-15'; document.getElementById('sun-date').dispatchEvent(new Event('input')); const t = document.getElementById('sun-time'); t.value = 840; t.dispatchEvent(new Event('input')); })()")
@@ -261,7 +263,11 @@ def test_3d(b, r, key, with_night=True):
         b.screenshot(f'{key}-nacht')
     b.js("document.getElementById('view3d').click()")
     b.pump(2)
-    r.check(f'{key}: 3D uit zet cartoon en zon uit', b.js('!is3D && !cartoon && !sun.on'))
+    r.check(f'{key}: 3D uit zet zon uit', b.js('!is3D && !sun.on'))
+    if b.js('floodPanel.open'):
+        b.js("document.getElementById('flood-close').click()")
+        b.pump(1)
+        r.check(f'{key}: overstroming sluiten wist het water', b.js("document.getElementById('flood').hidden && !water && !waterScenario"))
 
 
 def test_tools(b, r, key):
@@ -279,7 +285,7 @@ def test_tools(b, r, key):
             b.js("document.getElementById('measure-result').textContent"))
     b.js("document.getElementById('measure-clear').click()")
     b.js("(() => { const s = document.getElementById('env-layer'); s.value = 'geluid'; s.dispatchEvent(new Event('change')); })()")
-    r.check(f'{key}: omgevingslaag met legenda', b.wait_for("!!map.getLayer('env-layer') && document.getElementById('env-legend-img').naturalWidth > 0", 30))
+    r.check(f'{key}: layer met legenda', b.wait_for("!!map.getLayer('env-layer') && document.getElementById('env-legend-img').naturalWidth > 0", 30))
     b.js("document.getElementById('rain-live-toggle').click()")
     ok = b.wait_for("radar.frames.length > 0 && !!map.getLayer('radar-0') && document.getElementById('rain-now').textContent !== ''", 40)
     first = b.js("document.getElementById('radar-time').textContent")

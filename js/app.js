@@ -133,7 +133,7 @@ $('panel-handle').addEventListener('click', () => setPanelState((panelState + 1)
 // Active panels (Regen, Zon) show as compact cards on the map, without the
 // whole Opties sheet; opening one folds the report away so the map stays visible.
 function updatePhoneCards(opened) {
-  document.body.classList.toggle('show-cards', radar.active || (sun.on && is3D));
+  document.body.classList.toggle('show-cards', radar.active || floodPanel.open || (sun.on && is3D));
   if (opened && phone.matches) setPanelState(0);
 }
 $('controls-toggle').addEventListener('click', () => {

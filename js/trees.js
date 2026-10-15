@@ -7,16 +7,16 @@
 
 const BGT_TREES = 'https://api.pdok.nl/lv/bgt/ogc/v1/collections/vegetatieobject_punt/items';
 const DEFAULT_TREE_HEIGHT = 6;
-const trees = { on: true, list: [], version: 0, heightsFor: null, ready: Promise.resolve(), season: null };
+const trees = { list: [], version: 0, heightsFor: null, ready: Promise.resolve(), season: null };
 
 // ---------- Seasons ----------
 
 // The season follows the date in the sun panel (today by default). The BGT
 // has no species, so every tree is treated as deciduous.
 const TREE_SEASONS = {
-  lente: { label: 'lente', crown: 0.85, cartoon: ['#b5e48c', '#99d98c', '#a7c957', '#76c893'], real: ['#7fa65a', '#8db463', '#6f9a4e', '#98bd6c'], flat: '#99d98c' },
-  zomer: { label: 'zomer', crown: 1, cartoon: ['#7bc950', '#5fae3e', '#9ad65c', '#4f9a34'], real: ['#4f7f3a', '#5b8c41', '#466f33', '#628f48'], flat: '#5fae3e' },
-  herfst: { label: 'herfst', crown: 0.9, cartoon: ['#e76f51', '#f4a261', '#e9c46a', '#d4a373', '#bc6c25'], real: ['#c4622d', '#d99a3e', '#b5852a', '#9c5a2a'], flat: '#e9a23b' },
+  lente: { label: 'lente', crown: 0.85, real: ['#7fa65a', '#8db463', '#6f9a4e', '#98bd6c'], flat: '#99d98c' },
+  zomer: { label: 'zomer', crown: 1, real: ['#4f7f3a', '#5b8c41', '#466f33', '#628f48'], flat: '#5fae3e' },
+  herfst: { label: 'herfst', crown: 0.9, real: ['#c4622d', '#d99a3e', '#b5852a', '#9c5a2a'], flat: '#e9a23b' },
   // Bare: a faint crown of branches that hardly casts shade.
   winter: { label: 'winter (kaal)', crown: 0.9, bare: true, flat: '#9c8b7a' }
 };
@@ -119,32 +119,27 @@ async function updateTreeLayer() {
     geometry: { type: 'Point', coordinates: [t.lon, t.lat] },
     properties: { kroon: crownRadius(t.h), hoogte: t.h, gemeten: t.measured }
   })));
-  map.setLayoutProperty('bomen', 'visibility', trees.on && !is3D ? 'visible' : 'none');
+  map.setLayoutProperty('bomen', 'visibility', !is3D ? 'visible' : 'none');
 }
 
 // 3D: one instanced trunk mesh and one instanced crown mesh for all trees.
 // Returns the meshes, for hover picking.
 function addTrees(scene, frame, castShadow) {
-  if (!trees.on || !trees.list.length) return [];
+  if (!trees.list.length) return [];
   const n = trees.list.length;
-  const trunkGeom = new THREE.CylinderGeometry(1, 1, 1, cartoon ? 6 : 8);
+  const trunkGeom = new THREE.CylinderGeometry(1, 1, 1, 8);
   trunkGeom.rotateX(Math.PI / 2);
   trunkGeom.translate(0, 0, 0.5);
-  const crownGeom = new THREE.IcosahedronGeometry(1, cartoon ? 1 : 2);
+  const crownGeom = new THREE.IcosahedronGeometry(1, 2);
   trees.season ??= treeSeason();
   const look = TREE_SEASONS[trees.season];
-  const gradient = new THREE.DataTexture(new Uint8Array([90, 170, 255]), 3, 1, THREE.RedFormat);
-  gradient.minFilter = gradient.magFilter = THREE.NearestFilter;
-  gradient.needsUpdate = true;
-  const material = () => cartoon
-    ? new THREE.MeshToonMaterial({ gradientMap: gradient })
-    : new THREE.MeshLambertMaterial();
+  const material = () => new THREE.MeshLambertMaterial();
   const trunks = new THREE.InstancedMesh(trunkGeom, material(), n);
   const crowns = new THREE.InstancedMesh(crownGeom, look.bare
     ? new THREE.MeshLambertMaterial({ transparent: true, opacity: 0.3, depthWrite: false })
     : material(), n);
-  const leaves = look.bare ? ['#7a6a5a'] : cartoon ? look.cartoon : look.real;
-  const trunkColor = new THREE.Color().setStyle(cartoon ? '#8b5a2b' : '#6b4f3a');
+  const leaves = look.bare ? ['#7a6a5a'] : look.real;
+  const trunkColor = new THREE.Color().setStyle('#6b4f3a');
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3();
   trees.list.forEach((t, i) => {
     const [x, y] = frame.fromLngLat([t.lon, t.lat]);
@@ -159,7 +154,6 @@ function addTrees(scene, frame, castShadow) {
   for (const mesh of [trunks, crowns]) {
     // Bare winter crowns let most sunlight through.
     mesh.castShadow = castShadow && !(look.bare && mesh === crowns);
-    mesh.receiveShadow = castShadow && cartoon;
     mesh.frustumCulled = false;
     mesh.userData.tree = true;
     scene.add(mesh);
@@ -168,12 +162,3 @@ function addTrees(scene, frame, castShadow) {
 }
 
 const treeText = t => `Boom · ${t.measured ? '' : '~'}${nf.format(Math.round(t.h))} m hoog`;
-
-function setTreesVisible(on) {
-  trees.on = on;
-  $('trees-toggle').setAttribute('aria-pressed', on);
-  updateTreeLayer();
-  applyBuildingStyle();
-}
-
-$('trees-toggle').addEventListener('click', () => setTreesVisible(!trees.on));

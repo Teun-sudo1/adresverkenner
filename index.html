@@ -37,8 +37,8 @@
       </div>
       <div class="tile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>
-        <h3>3D en cartoon</h3>
-        <p>Bekijk de omgeving tot 250 m in 3D, realistisch of als speelse cartoon.</p>
+        <h3>3D</h3>
+        <p>Bekijk de omgeving tot 250 m in 3D, met echte dakvormen dichtbij en bomen.</p>
       </div>
       <div class="tile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
@@ -65,7 +65,7 @@
       <button id="help" class="secondary" type="button" aria-label="Uitleg" title="Uitleg">?</button>
       <button id="theme" class="secondary" type="button" aria-label="Donkere modus" title="Donker / licht">☾</button>
       <button id="settings-btn" class="secondary" type="button" aria-label="Instellingen" title="Instellingen" aria-expanded="false" aria-controls="settings">⚙</button>
-      <button id="print" class="secondary" type="button" hidden>Print / PDF</button>
+      <button id="print" class="secondary" type="button" aria-label="Printen of opslaan als pdf" title="Print / PDF" hidden><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></button>
       <button id="panel-hide" class="secondary" type="button" aria-label="Adresinfo verbergen" title="Adresinfo verbergen">×</button>
     </div>
     <div id="settings" class="popover" hidden>
@@ -222,10 +222,9 @@
     </div>
     <div id="view-btns" class="mapctl" role="group" aria-label="Weergave">
       <button type="button" id="view3d" aria-pressed="false" title="Toon panden in 3D rond het adres">3D</button>
-      <button type="button" id="cartoon" aria-pressed="false">Cartoon</button>
       <button type="button" id="sun-toggle" aria-pressed="false" title="Zonnestand en schaduwen (zet 3D aan)">Zon</button>
-      <button type="button" id="trees-toggle" aria-pressed="true" title="Bomen uit de BGT tonen of verbergen">Bomen</button>
       <button type="button" id="rain-live-toggle" aria-pressed="false" title="Live regenradar, regen nu en de komende 2 uur">Regen</button>
+      <button type="button" id="flood-toggle" aria-pressed="false" title="Overstroming of hevige regen simuleren rond het adres">Overstroming</button>
     </div>
     <button type="button" id="controls-toggle" class="mapctl" aria-expanded="false" aria-controls="map-controls">Opties</button>
     <!-- Map controls; on a phone they fold into one scrollable sheet behind "Opties". -->
@@ -263,7 +262,7 @@
           <button type="button" id="save-image" class="full">Kaart opslaan als afbeelding</button>
         </div>
         <div id="envlayer" class="mapctl">
-          <label for="env-layer">Omgevingslaag</label>
+          <label for="env-layer">Layers</label>
           <select id="env-layer"><option value="">Geen</option></select>
           <div id="env-legend" hidden>
             <img id="env-legend-img" alt="">
@@ -289,8 +288,9 @@
           <details class="hint"><summary>Toon als tabel</summary><table id="forecast-table"><thead><tr><th>Tijd</th><th class="num">mm</th></tr></thead><tbody></tbody></table></details>
           <p class="hint">Radar: RainViewer, verwachting: Open-Meteo (KNMI-model).</p>
         </div>
-        <div id="flood" class="mapctl">
-          <label for="flood-scenario">Water simuleren</label>
+        <div id="flood" class="mapctl" hidden>
+          <div class="panel-head"><span>Overstroming</span><button type="button" class="link" id="flood-close" aria-label="Overstroming sluiten">×</button></div>
+          <label for="flood-scenario" class="sublabel">Scenario</label>
           <select id="flood-scenario">
             <option value="">Uit</option>
             <option value="regen70">Hevige regen: 70 mm in 1 uur</option>

@@ -7,11 +7,11 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 ## Wat kun je ermee
 
 - **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS, klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Elk onderwerp is een uitklapbaar blok met een samenvattende regel. Ook te printen als pdf.
-- **3D:** de omgeving tot 250 m in 3D, met echte dakvormen dichtbij, bomen, en een speelse cartoonstijl.
+- **3D:** de omgeving tot 250 m in 3D, met echte dakvormen dichtbij en bomen (altijd zichtbaar, in 2D en 3D).
 - **Zon en schaduw:** schaduwen op elk tijdstip, een zonuren-kaart per dag, nachtweergave met verlichte ramen, en bomen per seizoen.
-- **Water:** hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
+- **Water (knop Overstroming):** hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
 - **Regen nu:** de live regenradar van de afgelopen 2 uur, of het nu regent bij het adres (dan valt er ook echt regen in beeld), en de verwachting voor de komende 2 uur per kwartier.
-- **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, omgevingslagen (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
+- **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, layers (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
 - **Overal bruikbaar:** licht en donker thema, telefoonweergave, deelbare links per adres, en een kwaliteitsstand die vanzelf naar Snel schakelt als de kaart hapert.
 
 ## Starten
@@ -36,7 +36,7 @@ python3 -m http.server 8000
 | `js/config.js` | Instellingen, bron-URL's, scenario's, de laadindicator (`track`), `fetchWithRetry` en de responscache (`cachedFetch`) |
 | `js/quality.js` | Kwaliteitsstand Mooi/Snel, de automatische overstap bij haperen, instellingenmenu en meldingen |
 | `js/map.js` | MapLibre-kaart, achtergrondlagen, basislagen en de hover-popup |
-| `js/buildings.js` | 3D-weergave, kleuring en filters van panden, three.js-laag (cartoon, dakvormen LoD 2.2, zon, schaduw, nachtramen), licht/donker-thema |
+| `js/buildings.js` | 3D-weergave, kleuring en filters van panden, three.js-laag (dakvormen LoD 2.2, zon, schaduw, nachtramen), licht/donker-thema |
 | `js/report.js` | Adres zoeken, het rapport (BAG, perceel, erfgoed, bouwjaarprofiel, klimaat, CBS) |
 | `js/tiff.js` | Minimale GeoTIFF-lezer voor de hoogte- en waterrasters |
 | `js/water.js` | Waterdiepteberekening (draait in een Web Worker) en de besturing van de watersimulatie |
@@ -98,7 +98,7 @@ Snel tekent op schermen met hoge resolutie met één pixel per CSS-pixel, laadt 
 
 ### Testen
 
-`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport en samenvattingen, watersimulatie (loopt het water echt op?), 3D, cartoon, zon en nacht, bomen en seizoenen, meten, omgevingslagen, de knop Regen (radar, regen nu, verwachting) en Snel/Mooi. De test zet de kwaliteit vast op Mooi, omdat onzichtbaar Chrome met de processor tekent en anders vanzelf naar Snel zou schakelen. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
+`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport en samenvattingen, watersimulatie via de knop Overstroming (loopt het water echt op?), 3D, zon en nacht, bomen en seizoenen, meten, layers, adresinfo verbergen, de knop Regen (radar, regen nu, verwachting) en Snel/Mooi. De test zet de kwaliteit vast op Mooi, omdat onzichtbaar Chrome met de processor tekent en anders vanzelf naar Snel zou schakelen. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
 
 ```sh
 pip install websocket-client

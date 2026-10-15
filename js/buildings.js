@@ -1,4 +1,4 @@
-// 3D view, building colours and filters, the three.js cartoon style and the light/dark theme.
+// 3D view, building colours and filters, the three.js layer and the light/dark theme.
 // Loaded as a classic script; see index.html for the load order.
 
 // ---------- 3D view ----------
@@ -7,14 +7,13 @@
 let current = null;
 let sceneFor = null;
 
-// Cartoon and Zon are always visible and switch 3D on when used; switching
-// 3D off turns them off too.
+// Zon is always visible and switches 3D on when used; switching 3D off
+// turns it off too.
 async function set3D(on) {
   if (on === is3D) return;
   is3D = on;
   $('view3d').setAttribute('aria-pressed', is3D);
   if (!is3D) {
-    if (cartoon) toggleCartoon();
     if (sun.on) toggleSun();
   }
   await mapReady;
@@ -129,7 +128,6 @@ const BUILDING_THEMES = {
 
 let colorBy = 'bouwjaar';
 const hiddenClasses = Object.fromEntries(Object.keys(BUILDING_THEMES).map(k => [k, new Set()]));
-let cartoon = false;
 const isDark = () => document.documentElement.dataset.theme === 'dark';
 
 // Mixes two #rrggbb colours; t is the share of `b`.
@@ -196,47 +194,12 @@ function updateLegendHint() {
 }
 map.on('zoomend', updateLegendHint);
 
-// The cartoon style has its own colours, so it can't be combined with a
-// colour theme: turning cartoon on sets the theme to "Geen", turning it off
-// restores the previous theme, and picking a theme turns cartoon off.
-let themeBeforeCartoon = 'bouwjaar';
-
-function updateCartoonButton() {
-  if (colorBy) cartoon = false;
-  $('cartoon').setAttribute('aria-pressed', cartoon);
-  $('cartoon').title = cartoon ? 'Terug naar gewone 3D met kleuring' : 'Speelse cartoonstijl in 3D (zet de kleuring van panden uit)';
-}
-
 $('color-by').addEventListener('change', () => {
   colorBy = $('color-by').value;
   // Roof colours only exist in 3D.
   if (BUILDING_THEMES[colorBy]?.roofLevel) set3D(true);
-  updateCartoonButton();
   renderLegend();
   applyBuildingStyle();
-});
-
-function toggleCartoon() {
-  cartoon = !cartoon;
-  if (cartoon) {
-    themeBeforeCartoon = colorBy || themeBeforeCartoon;
-    colorBy = '';
-  } else if (!colorBy) {
-    colorBy = themeBeforeCartoon;
-  }
-  $('color-by').value = colorBy;
-  updateCartoonButton();
-  renderLegend();
-  applyBuildingStyle();
-}
-
-$('cartoon').addEventListener('click', () => {
-  if (!is3D) {
-    set3D(true);
-    if (!cartoon) toggleCartoon();
-  } else {
-    toggleCartoon();
-  }
 });
 
 const neutralBuildingColor = () => isDark() ? '#8a93a6' : '#d5d9e0';
@@ -254,19 +217,18 @@ async function applyBuildingStyle() {
   const filters3d = [filter, detailIds.length && ['!', ['in', ['get', 'identificatie'], ['literal', detailIds]]]].filter(Boolean);
   map.setPaintProperty('pand-3d', 'fill-extrusion-color', ['case', selected, '#1a5fb4', fill]);
   map.setFilter('pand-3d', filters3d.length > 1 ? ['all', ...filters3d] : filters3d[0] ?? null);
-  map.setLayoutProperty('pand-3d', 'visibility', is3D && !cartoon ? 'visible' : 'none');
+  map.setLayoutProperty('pand-3d', 'visibility', is3D ? 'visible' : 'none');
   applyMapLight();
   setThreeVisible(is3D);
 }
 
 renderLegend();
-updateCartoonButton();
 
-// ---------- three.js layer: cartoon, detailed roofs, sun and shadow ----------
+// ---------- three.js layer: detailed roofs, trees, sun and shadow ----------
 
 // MapLibre can only extrude flat blocks and can't cast shadows, so one
-// three.js custom layer draws: the cartoon style, the real roof shapes of
-// buildings near the address (3D BAG LoD 2.2) and, with the sun on, the
+// three.js custom layer draws: the real roof shapes of buildings near the
+// address (3D BAG LoD 2.2) and, with the sun on, the
 // shadows of all buildings on the ground.
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 let THREE = null;
@@ -275,9 +237,6 @@ let sceneVersion = 0;
 // Detailed buildings near the address, by pand id: { ground, surfaces } in RD + NAP.
 let detailById = new Map();
 const three = { scene: null, origin: null, s: 1, key: '', sunLight: null, ambient: null, plane: null, shadowDirty: true };
-
-const TOON_WALLS = ['#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff', '#ffadad'];
-const TOON_ROOFS = ['#e07a5f', '#3d405b', '#81b29a', '#c06c84', '#6c5b7b', '#355c7d'];
 
 // Stable per-building colour choice (FNV-1a hash of the pand id).
 function hashId(id) {
@@ -325,9 +284,8 @@ const signedArea = r => r.reduce((a, [x, y], i) => { const [x2, y2] = r[(i + 1) 
 
 // A flat-roofed LoD 1.3 block: walls, a roof-coloured trim band (cartoon) and
 // the roof. Outlines go into `lines` when given.
-function addFlatBuilding(mb, lines, f, frame, wall, roof, trimBand) {
+function addFlatBuilding(mb, f, frame, wall, roof) {
   const h = f.properties.hoogte, id = f.properties.identificatie;
-  const trim = trimBand ? Math.min(0.8, h * 0.08) : 0;
   const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
   for (const poly of polys) {
     const rings = poly.map((ring, ri) => {
@@ -340,21 +298,11 @@ function addFlatBuilding(mb, lines, f, frame, wall, roof, trimBand) {
     if (!rings.length) continue;
     for (const r of rings) {
       for (let i = 0; i < r.length; i++) {
-        const [px, py] = r[(i - 1 + r.length) % r.length], [ax, ay] = r[i], [bx, by] = r[(i + 1) % r.length];
+        const [ax, ay] = r[i], [bx, by] = r[(i + 1) % r.length];
         const len = Math.hypot(bx - ax, by - ay) || 1;
         const n = [(by - ay) / len, -(bx - ax) / len, 0];
-        for (const [z0, z1, c] of [[0, h - trim, wall], [h - trim, h, roof]]) {
-          if (z1 <= z0) continue;
-          mb.tri([ax, ay, z0], [bx, by, z0], [bx, by, z1], n, c, id);
-          mb.tri([ax, ay, z0], [bx, by, z1], [ax, ay, z1], n, c, id);
-        }
-        if (lines) {
-          lines.push(ax, ay, h, bx, by, h, ax, ay, 0.05, bx, by, 0.05);
-          // Vertical outline only at real corners, not along curved walls.
-          const v1x = ax - px, v1y = ay - py, v2x = bx - ax, v2y = by - ay;
-          const cos = (v1x * v2x + v1y * v2y) / ((Math.hypot(v1x, v1y) * Math.hypot(v2x, v2y)) || 1);
-          if (cos < 0.9) lines.push(ax, ay, 0, ax, ay, h);
-        }
+        mb.tri([ax, ay, 0], [bx, by, 0], [bx, by, h], n, wall, id);
+        mb.tri([ax, ay, 0], [bx, by, h], [ax, ay, h], n, wall, id);
       }
     }
     const flat = rings.flat();
@@ -437,7 +385,7 @@ function buildThreeScene() {
   if (!current || !THREE) return;
   const dark = isDark();
   const hidden = colorBy ? hiddenClasses[colorBy] : null;
-  const key = [sceneVersion, quality.mode, trees.version, trees.on, highlightIds.join(','), dark, cartoon, colorBy, hidden ? [...hidden].join(',') : '', sun.on].join('|');
+  const key = [sceneVersion, quality.mode, trees.version, highlightIds.join(','), dark, colorBy, hidden ? [...hidden].join(',') : '', sun.on].join('|');
   if (key === three.key) return;
   three.key = key;
 
@@ -445,25 +393,21 @@ function buildThreeScene() {
   const visible = p => !(hidden && hidden.has(BUILDING_THEMES[colorBy].classify(p)));
   const colors = (id, p) => {
     const sel = highlightIds.includes(id);
-    if (cartoon) {
-      const k = hashId(id);
-      return [sel ? '#ffd23f' : TOON_WALLS[k % TOON_WALLS.length], sel ? '#e05a2b' : TOON_ROOFS[(k >>> 8) % TOON_ROOFS.length]];
-    }
     const base = sel ? '#1a5fb4' : colorBy ? themeClassColor(colorBy, p) : neutralBuildingColor();
     return [base, mixColor(base, '#000000', 0.18)];
   };
   // Color.setStyle converts the sRGB hex to the linear values three expects.
   const toColor = hex => new THREE.Color().setStyle(hex);
 
-  // Flat blocks are drawn here in cartoon mode; otherwise MapLibre draws them
-  // and here they only cast (invisible) shadows when the sun is on.
-  const flat = new MeshBuilder(), flatLines = [], detail = new MeshBuilder();
-  if (cartoon || sun.on) {
+  // MapLibre draws the flat blocks; here they only cast (invisible) shadows
+  // when the sun is on.
+  const flat = new MeshBuilder(), detail = new MeshBuilder();
+  if (sun.on) {
     for (const f of sceneFeatures) {
       const id = f.properties.identificatie;
       if (detailById.has(id) || !visible(f.properties)) continue;
       const [w, r] = colors(id, f.properties);
-      addFlatBuilding(flat, cartoon ? flatLines : null, f, frame, toColor(w), toColor(r), cartoon);
+      addFlatBuilding(flat, f, frame, toColor(w), toColor(r));
     }
   }
   const propsById = new Map(sceneFeatures.map(f => [f.properties.identificatie, f.properties]));
@@ -480,30 +424,14 @@ function buildThreeScene() {
   }
 
   const scene = new THREE.Scene();
-  const gradient = new THREE.DataTexture(new Uint8Array([90, 170, 255]), 3, 1, THREE.RedFormat);
-  gradient.minFilter = gradient.magFilter = THREE.NearestFilter;
-  gradient.needsUpdate = true;
-  // Faces are pushed back a little so outlines on their edges stay visible.
-  const material = () => cartoon
-    ? new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: gradient, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 })
-    : new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
-  const lineMaterial = new THREE.LineBasicMaterial({ color: dark ? 0x000000 : 0x1b1b2f });
+  // Faces are pushed back a little so MapLibre's blocks win where they touch.
+  const material = () => new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   const pickables = [];
   if (flat.pos.length) {
-    const mesh = new THREE.Mesh(flat.geometry(), cartoon ? material() : new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
-    // Invisible shadow casters aren't hoverable; MapLibre draws those blocks.
-    if (cartoon) {
-      mesh.userData.faceIds = flat.ids;
-      pickables.push(mesh);
-    }
-    mesh.castShadow = sun.on;
-    mesh.receiveShadow = sun.on && cartoon;
+    // Invisible shadow casters, not hoverable: MapLibre draws these blocks.
+    const mesh = new THREE.Mesh(flat.geometry(), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
+    mesh.castShadow = true;
     scene.add(mesh);
-  }
-  if (flatLines.length) {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(flatLines, 3));
-    scene.add(new THREE.LineSegments(g, lineMaterial));
   }
   if (detail.pos.length) {
     const mesh = new THREE.Mesh(detail.geometry(), material());
@@ -511,7 +439,6 @@ function buildThreeScene() {
     pickables.push(mesh);
     mesh.castShadow = mesh.receiveShadow = sun.on;
     scene.add(mesh);
-    if (cartoon) scene.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry, 25), lineMaterial));
   }
 
   pickables.push(...addTrees(scene, frame, sun.on));
