@@ -66,6 +66,7 @@
       <button id="theme" class="secondary" type="button" aria-label="Donkere modus" title="Donker / licht">☾</button>
       <button id="settings-btn" class="secondary" type="button" aria-label="Instellingen" title="Instellingen" aria-expanded="false" aria-controls="settings">⚙</button>
       <button id="print" class="secondary" type="button" hidden>Print / PDF</button>
+      <button id="panel-hide" class="secondary" type="button" aria-label="Adresinfo verbergen" title="Adresinfo verbergen">×</button>
     </div>
     <div id="settings" class="popover" hidden>
       <fieldset>
@@ -214,6 +215,7 @@
   <div id="mapwrap">
     <div id="map"></div>
     <canvas id="rain-canvas" aria-hidden="true"></canvas>
+    <button type="button" id="panel-show" class="mapctl" aria-controls="panel">Adresinfo</button>
     <div id="layers" class="mapctl" role="group" aria-label="Achtergrondkaart">
       <button type="button" data-layer="brt" aria-pressed="true">Kaart</button>
       <button type="button" data-layer="luchtfoto" aria-pressed="false">Luchtfoto</button>

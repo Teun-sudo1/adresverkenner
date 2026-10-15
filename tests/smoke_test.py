@@ -192,6 +192,16 @@ def test_report(b, r, key):
     b.js("document.getElementById('toggle-sections').click()")
     r.check(f'{key}: alles openklappen', b.js("[...document.querySelectorAll('details.section')].every(d => d.open)"))
     b.js("document.getElementById('toggle-sections').click()")
+    # The address info can be put away and brought back.
+    width = b.js("document.getElementById('map').clientWidth")
+    b.js("document.getElementById('panel-hide').click()")
+    b.pump(0.5)
+    hidden = b.js("getComputedStyle(document.getElementById('panel')).display === 'none'")
+    wider = b.js("document.getElementById('map').clientWidth")
+    b.js("document.getElementById('panel-show').click()")
+    b.pump(0.5)
+    r.check(f'{key}: adresinfo wegklikken en terughalen',
+            hidden and wider > width and b.js("getComputedStyle(document.getElementById('panel')).display !== 'none'"), f'kaart {width} → {wider} px')
 
 
 def test_water_rises(b, r, key, scenario):

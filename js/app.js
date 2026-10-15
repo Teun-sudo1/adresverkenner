@@ -100,6 +100,18 @@ new MutationObserver(() => {
   requestAnimationFrame(() => { summaryPending = false; summarize(); });
 }).observe($('result'), { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden'] });
 
+// ---------- Hiding the address info ----------
+
+// The whole sidebar (or the phone drawer) can be put away for a clear map;
+// the Adresinfo button on the map brings it back.
+function setPanelHidden(hidden) {
+  document.body.classList.toggle('panel-hidden', hidden);
+  $('panel-show').setAttribute('aria-expanded', !hidden);
+  (hidden ? $('panel-show') : $('panel-hide')).focus();
+}
+$('panel-hide').addEventListener('click', () => setPanelHidden(true));
+$('panel-show').addEventListener('click', () => setPanelHidden(false));
+
 // ---------- Phone layout ----------
 
 // On a phone the report is a drawer: collapsed (search and address only),
