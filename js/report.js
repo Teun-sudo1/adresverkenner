@@ -207,6 +207,8 @@ function resetResult() {
   for (const s of ['pand', 'perceel', 'buurt', 'scene3d', 'monumenten', 'bomen', 'lantaarns']) setLayerData(s, []);
   lights.list = [];
   lights.version++;
+  canals.list = [];
+  canals.version++;
   trees.list = [];
   trees.version++;
 }
@@ -388,6 +390,8 @@ async function loadAddress(lsId, { pushHistory = true, camera = null } = {}) {
     loadYearProfile(current, pandenKnown.then(p => p[0]?.properties.bouwjaar ?? null), stale);
     loadTrees(current, stale);
     loadLights(current, stale);
+    loadAmenities(current, stale);
+    loadCanals(current, stale);
     onRainPlaceChanged();
     if (is3D) loadTreeHeights(current).catch(err => console.error(err));
 
@@ -747,6 +751,41 @@ const CBS_GROUPS = [
   ]]
 ];
 
+// Comparable figures (no absolute counts) with their field in the national
+// CBS table; null where that table doesn't have them.
+const CBS_COMPARE = {
+  gemiddelde_huishoudsgrootte: n => n.GemiddeldeHuishoudensgrootte_33,
+  bevolkingsdichtheid_inwoners_per_km2: n => n.Bevolkingsdichtheid_34,
+  percentage_personen_65_jaar_en_ouder: n => Math.round(n.k_65JaarOfOuder_12 / n.AantalInwoners_5 * 100),
+  gemiddelde_woningwaarde: n => n.GemiddeldeWOZWaardeVanWoningen_39,
+  percentage_koopwoningen: n => n.Koopwoningen_47,
+  percentage_huurwoningen: n => n.HuurwoningenTotaal_48,
+  perc_huurwoningen_in_bezit_woningcorporaties: n => n.InBezitWoningcorporatie_49,
+  percentage_bouwjaarklasse_tot_2000: null,
+  gemiddeld_inkomen_per_inwoner: n => n.GemiddeldInkomenPerInwoner_78,
+  grote_supermarkt_gemiddelde_afstand_in_km: n => n.AfstandTotGroteSupermarkt_111,
+  basisonderwijs_gemiddelde_afstand_in_km: n => n.AfstandTotSchool_113,
+  huisartsenpraktijk_gemiddelde_afstand_in_km: n => n.AfstandTotHuisartsenpraktijk_110,
+  treinstation_gemiddelde_afstand_in_km: null
+};
+
+// The municipality around a point, per CBS year, like fetchBuurtYears.
+async function fetchGemeenteYears(lon, lat) {
+  const d = 1e-6;
+  const bbox = [lon - d, lat - d, lon + d, lat + d].join(',');
+  const results = await Promise.all(CBS_YEARS.map(y =>
+    getJSON(`https://api.pdok.nl/cbs/wijken-en-buurten-${y}/ogc/v1/collections/gemeenten/items?f=json&limit=1&bbox=${bbox}`)
+      .then(r => ({ year: y, feature: r.features[0] }))
+      .catch(() => ({ year: y, feature: null }))));
+  return results.filter(r => r.feature);
+}
+
+let cbsNational = null;
+function fetchNational() {
+  cbsNational ??= getJSON(CBS_NL).then(d => d.value[0]).catch(err => { console.error(err); cbsNational = null; return null; });
+  return cbsNational;
+}
+
 // CBS uses large negative codes (e.g. -99997) for secret or missing values.
 const validStat = v => typeof v === 'number' && v > -99990;
 
@@ -770,7 +809,7 @@ function buurtStat(years, key) {
 }
 
 async function loadBuurt(lon, lat, stale) {
-  const years = await fetchBuurtYears(lon, lat);
+  const [years, gemYears, national] = await Promise.all([fetchBuurtYears(lon, lat), fetchGemeenteYears(lon, lat).catch(() => []), fetchNational()]);
   if (stale()) return;
   if (!years.length) return;
 
@@ -790,6 +829,19 @@ async function loadBuurt(lon, lat, stale) {
         yr.className = 'yr';
         yr.textContent = ` (${hit.year})`;
         dd.append(yr);
+        dd.dataset.v = dd.textContent;
+        // The same figure for the municipality and the Netherlands, for context.
+        if (key in CBS_COMPARE) {
+          const gem = buurtStat(gemYears, key);
+          const nlRaw = national && CBS_COMPARE[key]?.(national);
+          const parts = [gem && `gemeente ${fmt(gem.value)}`, typeof nlRaw === 'number' && Number.isFinite(nlRaw) && `NL ${fmt(nlRaw)}`].filter(Boolean);
+          if (parts.length) {
+            const cmp = document.createElement('span');
+            cmp.className = 'cmp';
+            cmp.textContent = parts.join(' · ');
+            dd.append(cmp);
+          }
+        }
       }
       dl.append(dt, dd);
     }

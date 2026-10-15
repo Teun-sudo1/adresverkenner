@@ -47,6 +47,7 @@ dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; }
 dt { color: var(--muted); }
 dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
 dd .yr { font-weight: 400; font-size: 11px; color: var(--muted); }
+dd .cmp { display: block; font-weight: 400; font-size: 11px; color: var(--muted); }
 .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
 .kpi .k { font-size: 12px; color: var(--muted); }
@@ -300,6 +301,9 @@ table.figures tbody th { font-weight: 400; color: var(--muted); }
 #groei-play { flex: none; width: 38px; height: 38px; padding: 0; border-radius: 50%; background: #f28a2a; color: #111; font-size: 14px; }
 #groei-timeline { display: flex; flex: 1; gap: 2px; min-width: 0; }
 #groei-timeline button { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 4px 0; background: none; color: #aab3c5; border-radius: 0; }
+#groei-timeline .bar { height: 34px; display: flex; align-items: flex-end; }
+#groei-timeline .bar i { display: block; width: 100%; height: var(--h, 0); background: var(--c); opacity: .22; border-radius: 3px 3px 0 0; transition: opacity .4s, height .4s; }
+#groei-timeline button.on .bar i { opacity: 1; }
 #groei-timeline .sw { height: 10px; border-radius: 2px; background: var(--c); opacity: .22; transition: opacity .4s; }
 #groei-timeline button.on .sw { opacity: 1; }
 #groei-timeline .lab { font-size: 10px; text-align: left; white-space: nowrap; overflow: hidden; }
@@ -309,6 +313,9 @@ table.figures tbody th { font-weight: 400; color: var(--muted); }
   #groei-open { padding: 8px 10px; }
   #groei-year { font-size: 28px; }
 }
+.amenity-marker { width: 28px; height: 28px; padding: 5px; border-radius: 50%; background: var(--surface); color: var(--accent);
+  border: 2px solid var(--accent); box-shadow: 0 2px 6px rgba(0,0,0,.3); cursor: pointer; }
+.amenity-marker svg { width: 100%; height: 100%; display: block; }
 button.link { padding: 0; background: none; color: var(--accent); font-size: inherit; }
 button.link:hover { text-decoration: underline; }
 @media (max-width: 560px) { .tiles { grid-template-columns: 1fr; } }

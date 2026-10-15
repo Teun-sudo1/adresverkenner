@@ -25,7 +25,7 @@ const GROWTH_ERAS = [
 ];
 const GROWTH_STEP_MS = 1300;
 
-const growth = { map: null, ready: null, shown: -1, timer: 0, gemeente: null, popup: null };
+const growth = { map: null, ready: null, shown: -1, timer: 0, gemeente: null, popup: null, counts: null };
 
 function eraFilter(e) {
   const parts = [e.from != null && `oorspronkelijkbouwjaar >= ${e.from}`, e.to != null && `oorspronkelijkbouwjaar < ${e.to}`].filter(Boolean);
@@ -109,13 +109,17 @@ function createGrowthMap() {
 // ---------- Timeline ----------
 
 function renderTimeline() {
+  const max = growth.counts ? Math.max(...growth.counts) : 0;
   $('groei-timeline').replaceChildren(...GROWTH_ERAS.map((e, i) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.style.setProperty('--c', e.color);
-    b.title = e.label;
-    b.setAttribute('aria-label', `Toon panden tot en met ${e.label}`);
-    b.innerHTML = `<span class="sw"></span><span class="lab">${e.from ?? ''}</span>`;
+    const n = growth.counts?.[i];
+    // One bar per period: how many of today's buildings date from it.
+    b.style.setProperty('--h', max ? `${Math.max(2, n / max * 100)}%` : '0');
+    b.title = n != null ? `${e.label}: ${nf.format(n)} panden` : e.label;
+    b.setAttribute('aria-label', `Toon panden tot en met ${e.label}${n != null ? ` (${nf.format(n)} panden)` : ''}`);
+    b.innerHTML = `<span class="bar"><i></i></span><span class="sw"></span><span class="lab">${e.from ?? ''}</span>`;
     b.addEventListener('click', () => { stopGrowth(); showEra(i); });
     return b;
   }));
@@ -130,9 +134,16 @@ function showEra(i) {
   });
   const e = GROWTH_ERAS[i];
   $('groei-year').textContent = i < 0 ? '' : e.to ? e.to - 1 : 'Nu';
-  $('groei-caption').textContent = i < 0 ? '' : e.to
+  // With counts: how many of today's buildings stood by then, and what share.
+  let count = '';
+  if (growth.counts && i >= 0) {
+    const sum = growth.counts.slice(0, i + 1).reduce((a, b) => a + b, 0);
+    const total = growth.counts.reduce((a, b) => a + b, 0);
+    count = e.to ? `: ${nf.format(sum)} (${nf.format(Math.round(sum / total * 100))}%)` : `: ${nf.format(total)}`;
+  }
+  $('groei-caption').textContent = i < 0 ? '' : (e.to
     ? `Panden van nu die er in ${e.to - 1} al stonden`
-    : 'Alle panden van nu';
+    : 'Alle panden van nu') + count;
 }
 
 function playGrowth() {
@@ -197,7 +208,10 @@ async function showGemeente(query) {
     growth.map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]],
       { padding: { top: 90, bottom: 150, left: 30, right: 30 }, duration: 0 });
     setGrowthStatus('Panden laden…');
+    growth.counts = null;
+    renderTimeline();
     showEra(-1);
+    countPerEra(naam, polys);
     // Start once the tiles of every period are in, so the playback doesn't stall.
     growth.map.once('idle', () => {
       if (growth.gemeente !== naam) return;
@@ -207,6 +221,47 @@ async function showGemeente(query) {
   } catch (err) {
     console.error(err);
     setGrowthStatus(`Fout: ${err.message}`, true);
+  }
+}
+
+// Buildings per period inside the municipality: one count (WFS "hits") per
+// period, filtered on a simplified outline in RD coordinates. 3D BAG counts
+// building parts, so the totals are close to, not exactly, the number of panden.
+async function countPerEra(naam, polys) {
+  const rings = polys
+    .map(p => simplifyRing(p[0].map(([lon, lat]) => wgs84ToRd(lon, lat)), 50))
+    .filter(r => r.length >= 4 && ringArea(r) > 10000);
+  if (!rings.length) return;
+  const wkt = `MULTIPOLYGON(${rings.map(r => `((${r.map(([x, y]) => `${Math.round(x)} ${Math.round(y)}`).join(',')}))`).join(',')})`;
+  // Busy, the service answers with an error report (status 200), so this
+  // checks the answer itself, retries, and doesn't use the response cache.
+  const count = async e => {
+    const cql = encodeURIComponent(`INTERSECTS(geom,${wkt}) AND `) + eraFilter(e);
+    const url = `${GROWTH_WMS.replace('/wms', '/wfs')}?service=WFS&version=2.0.0&request=GetFeature&typeNames=BAG3D:lod12&resultType=hits&CQL_FILTER=${cql}`;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const n = await fetchWithRetry(url).then(r => r.text()).then(t => t.match(/numberMatched="(\d+)"/)?.[1]).catch(() => null);
+      if (n != null) return Number(n);
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+    throw new Error('Telling niet beschikbaar');
+  };
+  try {
+    // At most four at a time: each count is a spatial query on the server.
+    const counts = new Array(GROWTH_ERAS.length);
+    let next = 0;
+    await Promise.all(Array.from({ length: 4 }, async () => {
+      while (next < GROWTH_ERAS.length) {
+        const i = next++;
+        counts[i] = await count(GROWTH_ERAS[i]);
+      }
+    }));
+    if (growth.gemeente !== naam) return;
+    growth.counts = counts;
+    renderTimeline();
+    showEra(growth.shown);
+  } catch (err) {
+    // The map works without the bars.
+    console.error(err);
   }
 }
 

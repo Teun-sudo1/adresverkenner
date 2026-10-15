@@ -193,6 +193,12 @@ def test_report(b, r, key):
     sums = b.js("[...document.querySelectorAll('details.section:not([hidden])')].map(d => d.dataset.key + ': ' + d.querySelector('.sum').textContent)")
     empty = [s for s in sums if s.endswith(': ')]
     r.check(f'{key}: samenvattingen in de zijbalk', sums and not empty, '; '.join(sums)[:220] if not empty else f'leeg: {empty}')
+    cmp = b.js("[...document.querySelectorAll('#cbs .cmp')].map(e => e.textContent)")
+    r.check(f'{key}: buurt vergeleken met gemeente en NL', len(cmp) >= 8 and all('NL' in c or 'gemeente' in c for c in cmp), (cmp or ['geen'])[0])
+    b.wait_for("!document.getElementById('amenities-section').hidden", 60)
+    near = b.js("[...document.querySelectorAll('#amenities dd')].filter(d => d.dataset.v !== '–').length")
+    summary = b.js("document.getElementById('sum-voorzieningen').textContent")
+    r.check(f'{key}: voorzieningen in de buurt', near >= 5, f'{near} van 9 soorten, {summary}')
     b.js("document.getElementById('toggle-sections').click()")
     r.check(f'{key}: alles openklappen', b.js("[...document.querySelectorAll('details.section')].every(d => d.open)"))
     b.js("document.getElementById('toggle-sections').click()")
@@ -230,6 +236,9 @@ def test_3d(b, r, key, with_night=True):
     r.check(f'{key}: 3D-scène geladen', b.wait_for('sceneFeatures.length > 0 && !!three.scene', 120),
             f"{b.js('sceneFeatures.length')} delen, {b.js('detailById.size')} met dakvorm")
     r.check(f'{key}: bomen in 3D', b.wait_for('trees.heightsFor === current', 90), f"{b.js('trees.list.length')} bomen")
+    if b.js('canals.list.length'):
+        t0 = b.js('waterUniforms.uTime.value'); b.pump(1)
+        r.check(f'{key}: levend water in 3D', b.js('!!three.canals') and b.js('waterUniforms.uTime.value') > t0, f"{b.js('canals.list.length')} waterdelen")
     if b.js('trees.list.length'):
         b.pump(2)
         meshes = b.js("(() => { let n = 0; three.scene && three.scene.traverse(o => { if (o.isInstancedMesh && o.userData.tree) n++; }); return n; })()")
@@ -338,6 +347,9 @@ def test_growth(b, r, key):
         const d = g.getImageData(0, 0, t.width, t.height).data; let n = 0;
         for (let i = 0; i < d.length; i += 16) if (Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2]) > 60) n++;
         return n; })()""")
+    b.wait_for('growth.counts !== null', 60)
+    counts = b.js('growth.counts')
+    r.check(f'{key}: groeikaart telt panden per periode', counts and len(counts) == 11 and sum(counts) > 100000, f'{sum(counts or [])} panden')
     r.check(f'{key}: groeikaart speelt af voor de gemeente', ok and lit > 2000, f'{lit} gekleurde pixels, titel {b.js("document.getElementById('groei-title').textContent")}')
     b.screenshot(f'{key}-groeikaart')
     b.js("document.getElementById('groei-close').click()")

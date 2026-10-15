@@ -391,7 +391,7 @@ function buildThreeScene() {
   if (!current || !THREE) return;
   const dark = isDark();
   const hidden = colorBy ? hiddenClasses[colorBy] : null;
-  const key = [sceneVersion, quality.mode, trees.version, lights.version, highlightIds.join(','), dark, colorBy, hidden ? [...hidden].join(',') : '', sun.on].join('|');
+  const key = [sceneVersion, quality.mode, trees.version, lights.version, canals.version, highlightIds.join(','), dark, colorBy, hidden ? [...hidden].join(',') : '', sun.on].join('|');
   if (key === three.key) return;
   three.key = key;
 
@@ -450,6 +450,7 @@ function buildThreeScene() {
   pickables.push(...addTrees(scene, frame, sun.on));
   const windows = sun.on ? addWindows(scene, frame) : null;
   const streetLights = addLights(scene, frame);
+  const canalMesh = addCanals(scene, frame);
 
   const ambient = new THREE.AmbientLight(0xffffff, 1.6);
   const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -473,7 +474,7 @@ function buildThreeScene() {
   moveRain3D(three.scene, scene);
   moveWater3D(three.scene, scene);
   three.scene?.traverse(o => { o.geometry?.dispose(); o.material?.gradientMap?.dispose(); o.material?.dispose(); });
-  Object.assign(three, { scene, origin: frame.origin, s: frame.s, sunLight, ambient, plane, pickables, propsById, windows, lights: streetLights });
+  Object.assign(three, { scene, origin: frame.origin, s: frame.s, sunLight, ambient, plane, pickables, propsById, windows, lights: streetLights, canals: canalMesh });
   updateSunLight();
 }
 
@@ -512,6 +513,7 @@ function threeLayer() {
         three.shadowDirty = false;
       }
       renderer.render(three.scene, camera);
+      animateWater();
     }
   };
 }
@@ -684,6 +686,7 @@ function updateSunLight() {
   const pos = sun.on ? currentSun() : null;
   updateWindows(nightFactor());
   updateLights(nightFactor());
+  updateWaterGlint();
   if (pos) {
     const up = pos.altitude > 0;
     const c = Math.cos(pos.altitude);

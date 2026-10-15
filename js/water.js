@@ -678,7 +678,7 @@ function buildWater3D() {
   disposeWater3D();
   const frame = localFrame();
   const rgb = new THREE.Color().setStyle('#2f7fd0');
-  const material = new THREE.MeshLambertMaterial({
+  const material = livingWaterMaterial({
     color: 0x2f7fd0, transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide,
     clippingPlanes: [new THREE.Plane(new THREE.Vector3(0, 0, 1), 0)]
   });

@@ -46,6 +46,8 @@ const WATER_SCENARIOS = {
 // Newest first. The newest CBS year often has many fields not yet published,
 // so each statistic falls back to the most recent year that has a value.
 const CBS_YEARS = [2024, 2023];
+// CBS StatLine: key figures for all of the Netherlands (row 0 of the 2024 table).
+const CBS_NL = 'https://opendata.cbs.nl/ODataApi/odata/85984NED/TypedDataSet?$top=1&$format=json';
 // Above this many units we skip fetching them (one request per unit).
 const MAX_UNITS = 100;
 // BAG vector tiles are only published at zoom 17; MapLibre overzooms them.

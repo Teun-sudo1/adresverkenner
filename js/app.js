@@ -54,7 +54,8 @@ const shown = id => {
   const t = $(id)?.textContent.trim();
   return t && t !== '–' ? t : '';
 };
-const definitions = id => [...$(id).querySelectorAll('dt')].map(dt => [dt.textContent.trim(), dt.nextElementSibling.textContent.trim()]);
+// A value can carry its own short form (data-v), without the extra lines under it.
+const definitions = id => [...$(id).querySelectorAll('dt')].map(dt => [dt.textContent.trim(), (dt.nextElementSibling.dataset.v ?? dt.nextElementSibling.textContent).trim()]);
 const withoutYear = t => t.replace(/\s*\(\d{4}\)$/, '');
 
 function summarize() {
@@ -84,6 +85,9 @@ function summarize() {
   const cbs = Object.fromEntries(definitions('cbs'));
   set('buurt', [cbs['Inwoners'] && `${withoutYear(cbs['Inwoners'])} inwoners`,
     cbs['Gem. WOZ-waarde'] && cbs['Gem. WOZ-waarde'] !== '–' && `WOZ ${withoutYear(cbs['Gem. WOZ-waarde'])}`]);
+  const near = Object.fromEntries(definitions('amenities'));
+  set('voorzieningen', [near['Supermarkt'] && near['Supermarkt'] !== '–' && `supermarkt ${near['Supermarkt']}`,
+    near['Bus- of tramhalte'] && near['Bus- of tramhalte'] !== '–' && `halte ${near['Bus- of tramhalte']}`]);
   const older = shown('years-headline').match(/ouder dan (\d+%)/)?.[1];
   set('bouwjaren', [older && `ouder dan ${older} van de omgeving`]);
   const rows = $('units').rows.length;

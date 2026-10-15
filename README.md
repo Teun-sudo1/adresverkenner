@@ -6,13 +6,13 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 
 ## Wat kun je ermee
 
-- **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS, klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Elk onderwerp is een uitklapbaar blok met een samenvattende regel. Ook te printen als pdf.
-- **3D:** de omgeving tot 750 m in 3D (de binnenste 250 m met dakvormen, filters en schaduw), bomen en straatlantaarns, een lucht die meekleurt met de zon, en een rondvlucht van 10 seconden van nacht naar dag (of andersom) bij het eerste bezoek aan een adres in 3D.
+- **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS (naast gemeente en Nederland), voorzieningen in de buurt (OpenStreetMap), klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Elk onderwerp is een uitklapbaar blok met een samenvattende regel. Ook te printen als pdf.
+- **3D:** de omgeving tot 750 m in 3D (de binnenste 250 m met dakvormen, filters en schaduw), bomen, straatlantaarns, grachten met bewegend water, een lucht die meekleurt met de zon, en een rondvlucht van 10 seconden van nacht naar dag (of andersom) bij het eerste bezoek aan een adres in 3D.
 - **Zon en schaduw:** schaduwen op elk tijdstip, een zonuren-kaart per dag, nachtweergave met verlichte ramen, en bomen per seizoen.
 - **Water (knop Overstroming):** de hoogte van het maaiveld ten opzichte van NAP, hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
 - **Regen nu:** de live regenradar van de afgelopen 2 uur, of het nu regent bij het adres (dan valt er ook echt regen in beeld), en de verwachting voor de komende 2 uur per kwartier.
 - **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, layers (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
-- **Groeikaart:** een hele gemeente op een donkere kaart, waarop de panden per bouwperiode oplichten, van vóór 1800 tot nu (3D BAG-kaartdienst, gefilterd op bouwjaar).
+- **Groeikaart:** een hele gemeente op een donkere kaart, waarop de panden per bouwperiode oplichten, van vóór 1800 tot nu, met per periode het aantal panden (3D BAG-kaartdienst, gefilterd op bouwjaar).
 - **Vergelijken en lijsten:** twee adressen naast elkaar, of een lijst van maximaal 200 adressen in één keer, te downloaden als CSV voor Excel.
 - **Overal bruikbaar:** licht en donker thema, telefoonweergave, deelbare links die ook de weergave onthouden (kaarthoek, 3D, zon, water, layer, regen), en een kwaliteitsstand die vanzelf naar Snel schakelt als de kaart hapert.
 
@@ -42,12 +42,14 @@ python3 -m http.server 8000
 | `js/report.js` | Adres zoeken, het rapport (BAG, perceel, erfgoed, bouwjaarprofiel, klimaat, CBS) |
 | `js/tiff.js` | Minimale GeoTIFF-lezer voor de hoogte- en waterrasters |
 | `js/water.js` | Waterdiepteberekening (draait in een Web Worker) en de besturing van de watersimulatie |
+| `js/livingwater.js` | Bewegend water in 3D: grachten en sloten uit de BGT, en de golfjes en glinstering op al het 3D-water |
 | `js/rain.js` | Regendruppels en kringen tijdens de bui |
 | `js/solar.js` | Zonnepanelen-schatting per dakvlak |
 | `js/sunhours.js` | Zonuren-kaart (schaduw over het AHN-oppervlaktemodel) |
 | `js/layers.js` | Layers (WMS) met legenda |
 | `js/weather.js` | Knop Regen: live radar (RainViewer), regen nu bij het adres (uit de radarkleur), verwachting komende 2 uur (Open-Meteo) |
 | `js/trees.js` | Bomen uit de BGT, in 2D en 3D, met seizoenen |
+| `js/amenities.js` | Voorzieningen in de buurt uit OpenStreetMap, gelezen uit de vectortegels van OpenFreeMap met een eigen kleine decoder |
 | `js/lights.js` | Straatlantaarns uit de BGT: palen in 3D die 's nachts licht geven |
 | `js/tools.js` | Meten en kaart opslaan als afbeelding |
 | `js/camera.js` | Het draairondje rechtsboven (draaien, kantelen, noorden boven) en de rondvlucht |
@@ -69,11 +71,14 @@ Alle bronnen worden direct vanuit de browser opgevraagd en moeten dus CORS toest
 |---|---|---|
 | PDOK Locatieserver | Adres zoeken, suggesties, klikken op de kaart | `report.js` |
 | PDOK BAG (OGC API en vectortegels) | Panden, verblijfsobjecten, bouwjaar, status, gebruiksdoel | `report.js`, `map.js`, `buildings.js` |
-| 3D BAG (OGC API en WFS) | Hoogtes, dakvormen LoD 2.2, bouwjaren in de omgeving | `buildings.js`, `report.js` |
+| 3D BAG (OGC API, WFS en WMS) | Hoogtes, dakvormen LoD 2.2, bouwjaren in de omgeving; de Groeikaart (WMS gefilterd op bouwjaar, tellingen via WFS) | `buildings.js`, `report.js`, `growth.js` |
 | PDOK BRK Kadastrale kaart | Percelen | `report.js` |
-| PDOK CBS Wijken en Buurten | Buurtcijfers (meest recente jaar met waarde, per kengetal) | `report.js`, `CBS_YEARS` in `config.js` |
+| PDOK CBS Wijken en Buurten | Buurtcijfers en gemeentecijfers (meest recente jaar met waarde, per kengetal) | `report.js`, `CBS_YEARS` in `config.js` |
+| CBS StatLine (OData, tabel 85984NED) | Dezelfde kengetallen voor heel Nederland | `CBS_NL` in `config.js` |
+| PDOK Bestuurlijke Gebieden | Gemeentegrenzen voor de Groeikaart | `growth.js` |
 | PDOK AHN (WCS) | Maaiveld (DTM) en oppervlak (DSM): waterverfijning, zonuren, boomhoogtes | `water.js`, `sunhours.js`, `trees.js` |
-| PDOK BGT | Bomen (vegetatieobject, type boom) | `trees.js` |
+| PDOK BGT | Bomen (vegetatieobject), straatlantaarns (paal, lichtmast), water (waterdeel) | `trees.js`, `lights.js`, `livingwater.js` |
+| OpenFreeMap (vectortegels, OpenStreetMap) | Voorzieningen in de buurt | `amenities.js` |
 | PDOK BRT-achtergrondkaart en luchtfoto | Achtergrondkaarten | `map.js` |
 | RCE (openbaar WFS en geovoorziening) | Rijksmonumenten en beschermde stads- en dorpsgezichten | `report.js` |
 | Klimaateffectatlas (WMS, WCS, opslag) | Overstromingsdieptes, overstromingskans, bodemdaling, paalrot, hitte, de hevige-regen-COG | `config.js`, `report.js`, `layers.js` |
