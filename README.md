@@ -12,6 +12,7 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 - **Water (knop Overstroming):** de hoogte van het maaiveld ten opzichte van NAP, hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
 - **Regen nu:** de live regenradar van de afgelopen 2 uur, of het nu regent bij het adres (dan valt er ook echt regen in beeld), en de verwachting voor de komende 2 uur per kwartier.
 - **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, layers (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
+- **Groeikaart:** een hele gemeente op een donkere kaart, waarop de panden per bouwperiode oplichten, van vóór 1800 tot nu (3D BAG-kaartdienst, gefilterd op bouwjaar).
 - **Vergelijken en lijsten:** twee adressen naast elkaar, of een lijst van maximaal 200 adressen in één keer, te downloaden als CSV voor Excel.
 - **Overal bruikbaar:** licht en donker thema, telefoonweergave, deelbare links die ook de weergave onthouden (kaarthoek, 3D, zon, water, layer, regen), en een kwaliteitsstand die vanzelf naar Snel schakelt als de kaart hapert.
 
@@ -51,6 +52,7 @@ python3 -m http.server 8000
 | `js/tools.js` | Meten en kaart opslaan als afbeelding |
 | `js/camera.js` | Het draairondje rechtsboven (draaien, kantelen, noorden boven) en de rondvlucht |
 | `js/share.js` | Deelbare links: de URL bewaart adres en weergave, en zet die terug bij openen |
+| `js/growth.js` | Groeikaart: aparte kaart per gemeente, panden per periode uit de 3D BAG-WMS, in de browser ingekleurd |
 | `js/compare.js` | Kerngegevens per adres zonder kaart (`keyFigures`), twee adressen vergelijken en de lijst met CSV-export |
 | `js/app.js` | Uitklapbare rapportblokken met samenvattingen, print, telefoonweergave, welkomstscherm en opstart |
 | `css/app.css` | Alle opmaak, met kleurvariabelen voor licht en donker |

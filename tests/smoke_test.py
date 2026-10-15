@@ -329,6 +329,20 @@ def test_flight(b, r, key):
     b.pump(1)
 
 
+def test_growth(b, r, key):
+    """Groeikaart: opens with the address's municipality and plays to now."""
+    b.js("document.getElementById('groei-open').click()")
+    ok = b.wait_for("growth.gemeente === 'Amsterdam' && growth.shown === GROWTH_ERAS.length - 1 && growth.timer === 0", 120)
+    lit = b.js("""(() => { const c = growth.map.getCanvas(), t = document.createElement('canvas');
+        t.width = c.width; t.height = c.height; const g = t.getContext('2d'); g.drawImage(c, 0, 0);
+        const d = g.getImageData(0, 0, t.width, t.height).data; let n = 0;
+        for (let i = 0; i < d.length; i += 16) if (Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2]) > 60) n++;
+        return n; })()""")
+    r.check(f'{key}: groeikaart speelt af voor de gemeente', ok and lit > 2000, f'{lit} gekleurde pixels, titel {b.js("document.getElementById('groei-title').textContent")}')
+    b.screenshot(f'{key}-groeikaart')
+    b.js("document.getElementById('groei-close').click()")
+
+
 def test_share(b, r, key, base_url):
     """Sets a view, then opens the page's own URL fresh: the view must come back."""
     b.js("document.querySelector('#layers [data-layer=luchtfoto]').click()")
@@ -399,6 +413,7 @@ def main():
                 test_water_rises(b, r, key, 'ov_kleine')
             if key == 'prinsengracht':
                 test_tools(b, r, key)
+                test_growth(b, r, key)
             test_3d(b, r, key, with_night=(key == 'prinsengracht'))
             if key == 'damrak':
                 test_share(b, r, key, args.url)

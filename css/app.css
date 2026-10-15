@@ -275,6 +275,40 @@ table.figures tbody th { font-weight: 400; color: var(--muted); }
   .camera-ctrl button.dial, .dial svg { width: 56px; height: 56px; }
   .camera-ctrl button.fly { width: 56px; height: 40px; }
 }
+/* Groeikaart: its own button on the map and a full-screen dark layer. */
+#groei-open { top: 10px; left: 164px; display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-weight: 600;
+  background: linear-gradient(135deg, #5b1a78, #e86a3e); color: #fff; border: none; }
+#groei-open:hover { filter: brightness(1.1); }
+#groei { position: fixed; inset: 0; z-index: 45; background: #0b0f19; color: #f2f4f8; }
+#groei[hidden] { display: none; }
+#groei-map { position: absolute; inset: 0; }
+.groei-top, .groei-bottom { position: absolute; background: rgba(12,16,28,.86); border-radius: 12px; backdrop-filter: blur(6px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.groei-top { top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; width: min(360px, calc(100% - 76px)); padding: 12px 14px; box-sizing: border-box; }
+.groei-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+#groei-title { margin: 0; font-size: 18px; }
+#groei-close { padding: 2px 10px; font-size: 18px; line-height: 1.2; background: transparent; color: #cfd5e2; border: 1px solid #3a4258; }
+#groei-form { display: flex; gap: 8px; margin-top: 8px; }
+#groei-q { flex: 1; min-width: 0; padding: 7px 10px; border-radius: 6px; border: 1px solid #3a4258; background: #151b2b; color: #f2f4f8; font: inherit; }
+#groei-status { margin: 6px 0 0; font-size: 12px; color: #aab3c5; }
+#groei-status:empty { display: none; }
+#groei-status.error { color: #ff8a80; }
+.groei-bottom { left: 12px; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); max-width: 760px; margin: 0 auto; padding: 12px 14px; }
+.groei-now { display: flex; align-items: baseline; gap: 10px; min-height: 40px; }
+#groei-year { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
+#groei-caption { color: #aab3c5; font-size: 13px; }
+.groei-bar { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+#groei-play { flex: none; width: 38px; height: 38px; padding: 0; border-radius: 50%; background: #f28a2a; color: #111; font-size: 14px; }
+#groei-timeline { display: flex; flex: 1; gap: 2px; min-width: 0; }
+#groei-timeline button { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 4px 0; background: none; color: #aab3c5; border-radius: 0; }
+#groei-timeline .sw { height: 10px; border-radius: 2px; background: var(--c); opacity: .22; transition: opacity .4s; }
+#groei-timeline button.on .sw { opacity: 1; }
+#groei-timeline .lab { font-size: 10px; text-align: left; white-space: nowrap; overflow: hidden; }
+.groei-note { margin: 8px 0 0; font-size: 11px; color: #8f98ab; }
+@media (max-width: 700px) {
+  #groei-open span { display: none; }
+  #groei-open { padding: 8px 10px; }
+  #groei-year { font-size: 28px; }
+}
 button.link { padding: 0; background: none; color: var(--accent); font-size: inherit; }
 button.link:hover { text-decoration: underline; }
 @media (max-width: 560px) { .tiles { grid-template-columns: 1fr; } }
@@ -332,7 +366,7 @@ body.panel-hidden #panel-show { display: block; }
   html, body { height: auto; }
   #app { display: block; }
   #panel { width: auto; max-height: none; overflow: visible; padding: 0; border: 0; }
-  #mapwrap, #search, .hint, #status, #recent, #print, #theme, #help, #welcome, #r-bagviewer, .search-extras, #compare, #bulk { display: none !important; }
+  #mapwrap, #search, .hint, #status, #recent, #print, #theme, #help, #welcome, #r-bagviewer, .search-extras, #compare, #bulk, #groei { display: none !important; }
   #print-map { display: block; width: 100%; max-height: 90mm; object-fit: cover; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; }
   #loadbar, #settings-btn, #settings, .section-tools, #toast, #solar-show, .chart-tip, #panel details:not(.section) { display: none !important; }
   details.section > summary::before { content: none; }
