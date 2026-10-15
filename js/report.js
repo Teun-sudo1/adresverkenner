@@ -334,7 +334,7 @@ async function loadAddress(lsId, { pushHistory = true } = {}) {
 
     // Some browsers refuse pushState on file:// pages; the report still works without it.
     if (pushHistory) try { history.pushState({ id: lsId }, '', `?id=${encodeURIComponent(lsId)}`); } catch {}
-    document.title = `${doc.weergavenaam} – Adresrapport`;
+    document.title = `${doc.weergavenaam} – Adresverkenner`;
     $('q').value = doc.weergavenaam;
     addRecent(lsId, doc.weergavenaam);
 

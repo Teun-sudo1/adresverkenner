@@ -130,7 +130,7 @@ async function saveMapImage() {
   ctx.fillRect(0, src.height, out.width, footer);
   ctx.fillStyle = '#1d2433';
   ctx.font = `600 ${Math.round(13 * dpr)}px system-ui, -apple-system, sans-serif`;
-  const title = $('r-address').textContent ? `${$('r-address').textContent}, ${$('r-place').textContent}` : 'Adresrapport';
+  const title = $('r-address').textContent ? `${$('r-address').textContent}, ${$('r-place').textContent}` : 'Adresverkenner';
   ctx.fillText(`${title} · ${new Date().toLocaleDateString('nl-NL')}`, 10 * dpr, src.height + 17 * dpr);
   ctx.fillStyle = '#5a6475';
   ctx.font = `${Math.round(11 * dpr)}px system-ui, -apple-system, sans-serif`;
@@ -141,7 +141,7 @@ async function saveMapImage() {
   out.toBlob(blob => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `adresrapport-${slug}.png`;
+    a.download = `adresverkenner-${slug}.png`;
     document.body.append(a);
     a.click();
     a.remove();

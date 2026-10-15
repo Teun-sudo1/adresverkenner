@@ -1,12 +1,12 @@
 # Adresverkenner
 
-Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de buurt, en wat er gebeurt bij hevige regen of een overstroming. Alles draait in de browser op open data van onder meer het Kadaster, het CBS, de Rijksdienst voor het Cultureel Erfgoed, het RIVM en de Klimaateffectatlas. Er is geen eigen server en er zijn geen API-sleutels nodig. (In de app zelf heet het rapport "Adresrapport".)
+Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de buurt, en wat er gebeurt bij hevige regen of een overstroming. Alles draait in de browser op open data van onder meer het Kadaster, het CBS, de Rijksdienst voor het Cultureel Erfgoed, het RIVM en de Klimaateffectatlas. Er is geen eigen server en er zijn geen API-sleutels nodig.
 
 **Probeer het:** https://teun-sudo1.github.io/adresverkenner/
 
 ## Wat kun je ermee
 
-- **Adresrapport:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS, klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Ook te printen als pdf.
+- **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS, klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Ook te printen als pdf.
 - **3D:** de omgeving tot 250 m in 3D, met echte dakvormen dichtbij, bomen, en een speelse cartoonstijl.
 - **Zon en schaduw:** schaduwen op elk tijdstip, een zonuren-kaart per dag, nachtweergave met verlichte ramen, en bomen per seizoen.
 - **Water:** hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels, plus de actuele regenradar.
@@ -87,7 +87,7 @@ De Klimaateffectatlas en het RIVM zetten een datum in hun laagnamen, zoals `_202
 
 ### Cache
 
-Antwoorden van GET-verzoeken worden een dag bewaard in de Cache Storage van de browser (`cachedFetch` in `js/config.js`). Bij een netwerkhapering of serverfout probeert `fetchWithRetry` het eenmaal opnieuw; die helper wordt ook in de water-worker gebruikt. De regenradar gaat altijd langs de cache heen, omdat die elke paar minuten verandert. Verandert de vorm van de opgehaalde data, verhoog dan `CACHE_NAME` (bijvoorbeeld naar `adresrapport-v2`), zodat oude antwoorden niet meer gebruikt worden. Berekend water wordt per adres en scenario in het geheugen bewaard zolang de pagina open is.
+Antwoorden van GET-verzoeken worden een dag bewaard in de Cache Storage van de browser (`cachedFetch` in `js/config.js`). Bij een netwerkhapering of serverfout probeert `fetchWithRetry` het eenmaal opnieuw; die helper wordt ook in de water-worker gebruikt. De regenradar gaat altijd langs de cache heen, omdat die elke paar minuten verandert. Verandert de vorm van de opgehaalde data, verhoog dan `CACHE_NAME` (bijvoorbeeld naar `adresrapport-v2`), zodat oude antwoorden niet meer gebruikt worden. (De opslagnamen in de browser, zoals `adresrapport.theme`, dateren van vóór de naam Adresverkenner; ze zijn bewust zo gebleven, zodat bestaande instellingen bewaard blijven.) Berekend water wordt per adres en scenario in het geheugen bewaard zolang de pagina open is.
 
 ### Testen
 
