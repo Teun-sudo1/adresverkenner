@@ -123,6 +123,14 @@ tr.current td { background: var(--current); font-weight: 600; }
 #envlayer label { display: block; font-weight: 600; margin-bottom: 4px; }
 #envlayer select { width: 100%; font: inherit; padding: 4px; border: 1px solid var(--border-strong); border-radius: 4px; }
 #env-legend[hidden] { display: none; }
+#env-legend-img[hidden], #radar-controls[hidden], #show-radar[hidden] { display: none; }
+#radar-controls .row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+#radar-play { padding: 3px 8px; font-size: 12px; background: var(--accent); color: var(--accent-text); }
+#radar-time { font-weight: 600; font-variant-numeric: tabular-nums; }
+/* The radar's own colours as seen in its tiles: beige drizzle, light blue to blue. */
+.radar-ramp { height: 8px; margin-top: 8px; border-radius: 4px; background: linear-gradient(to right, #d6c88f, #88ddee, #36bae5, #1baee2); }
+#envlayer .ramp-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+#show-radar { display: block; margin-top: 6px; font-size: 12px; }
 /* Legend images are drawn for a white background, also in dark mode. */
 #env-legend-img { display: block; max-width: 100%; max-height: 40vh; margin-top: 6px; padding: 4px; background: #fff; border-radius: 4px; }
 #sun-play { padding: 3px 8px; font-size: 12px; background: var(--accent); color: var(--accent-text); }

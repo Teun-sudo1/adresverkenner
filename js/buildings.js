@@ -779,9 +779,10 @@ function updateSun() {
     const pos = currentSun();
     const { rise, set } = sunTimes();
     const times = rise != null && set != null ? ` · op ${fmtClock(rise)}, onder ${fmtClock(set)}` : '';
-    $('sun-info').textContent = pos.altitude > 0
+    const season = ` · bomen: ${TREE_SEASONS[treeSeason()].label}`;
+    $('sun-info').textContent = (pos.altitude > 0
       ? `Zon ${nf.format(Math.round(pos.altitude * 180 / Math.PI))}° hoog, uit het ${COMPASS[Math.round(pos.azimuth / (Math.PI / 4)) % 8]}${times}`
-      : `De zon is onder${times}`;
+      : `De zon is onder${times}`) + season;
   }
   updateSunLight();
   applyMapLight();
@@ -808,7 +809,10 @@ $('sun-toggle').addEventListener('click', () => {
     toggleSun();
   }
 });
-$('sun-date').addEventListener('input', updateSun);
+$('sun-date').addEventListener('input', () => {
+  updateSun();
+  updateTreeSeason();
+});
 $('sun-time').addEventListener('input', updateSun);
 
 let sunFrame = 0;

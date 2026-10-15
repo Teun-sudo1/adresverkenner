@@ -250,7 +250,7 @@ async function inflate(bytes) {
 
 function rangeSource(url) {
   return async (offset, length) => {
-    const res = await fetch(url, { headers: { Range: `bytes=${offset}-${offset + length - 1}` } });
+    const res = await fetchWithRetry(url, { headers: { Range: `bytes=${offset}-${offset + length - 1}` } });
     if (!res.ok) throw new Error(`HTTP ${res.status} bij ${new URL(url).hostname}`);
     return new Uint8Array(await res.arrayBuffer());
   };
@@ -261,7 +261,7 @@ async function fetchCoverage(base, coverageId, [minX, minY, maxX, maxY], ax, ay,
   const url = `${base}?service=WCS&version=2.0.1&request=GetCoverage&coverageId=${coverageId}` +
     `&subset=${ax}(${minX},${maxX})&subset=${ay}(${minY},${maxY})&format=image/tiff${extra}`;
   // cachedFetch exists on the page, not in the water worker.
-  const res = await (typeof cachedFetch === 'function' ? cachedFetch : fetch)(url);
+  const res = await (typeof cachedFetch === 'function' ? cachedFetch : fetchWithRetry)(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} bij ${new URL(url).hostname}`);
   const buf = new Uint8Array(await res.arrayBuffer());
   const tiff = await openTiff(async (o, n) => buf.subarray(o, o + n), inflate);
@@ -272,7 +272,7 @@ async function fetchCoverage(base, coverageId, [minX, minY, maxX, maxY], ax, ay,
 async function fetchAllFeatures(url, maxPages = 6) {
   const features = [];
   for (let i = 0; url && i < maxPages; i++) {
-    const res = await (typeof cachedFetch === 'function' ? cachedFetch : fetch)(url, { headers: { Accept: 'application/geo+json, application/json' } });
+    const res = await (typeof cachedFetch === 'function' ? cachedFetch : fetchWithRetry)(url, { headers: { Accept: 'application/geo+json, application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status} bij ${new URL(url).hostname}`);
     const page = await res.json();
     features.push(...page.features);
@@ -353,7 +353,7 @@ async function computeWater(p) {
 const D3_URLS = ['https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js',
   'https://cdn.jsdelivr.net/npm/d3-contour@4.0.2/dist/d3-contour.min.js'];
 const FFLATE_URL = 'https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js';
-const WORKER_FUNCTIONS = [openTiff, inflate, rangeSource, fetchCoverage, fetchAllFeatures, rdToWgs84, refineDepth,
+const WORKER_FUNCTIONS = [fetchWithRetry, openTiff, inflate, rangeSource, fetchCoverage, fetchAllFeatures, rdToWgs84, refineDepth,
   footprintMask, fillTerrainGaps, downsample, simplifyRing, ringArea, waterContours, cropGrid, pasteGrid, computeWater];
 
 // The worker is assembled from this page's own functions, so the water code

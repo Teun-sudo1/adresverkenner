@@ -80,6 +80,19 @@ function track(promise) {
   promise.then(done, done);
   return promise;
 }
+// Public data services sometimes drop a connection or answer a one-off server
+// error; try once more before giving up. Also used inside the water worker.
+async function fetchWithRetry(url, init) {
+  try {
+    const res = await fetch(url, init);
+    if (res.status < 500) return res;
+  } catch (err) {
+    if (init?.signal?.aborted) throw err;
+  }
+  await new Promise(r => setTimeout(r, 800));
+  return fetch(url, init);
+}
+
 // ---------- Response cache ----------
 
 // Data for an address rarely changes within a day, so GET responses are kept
@@ -106,12 +119,7 @@ async function cachedFetch(url, init = {}) {
       const cache = await openCache();
       const hit = await cache?.match(url).catch(() => null);
       if (hit && Date.now() - Number(hit.headers.get('x-cached-at')) < CACHE_TTL) return hit;
-      let res = await fetch(url, init);
-      // Public data services sometimes answer a one-off server error; try once more.
-      if (res.status >= 500) {
-        await new Promise(r => setTimeout(r, 800));
-        res = await fetch(url, init);
-      }
+      const res = await fetchWithRetry(url, init);
       if (res.ok && cache) {
         const headers = new Headers(res.headers);
         headers.set('x-cached-at', String(Date.now()));

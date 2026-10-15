@@ -221,6 +221,11 @@ def test_3d(b, r, key, with_night=True):
     b.screenshot(f'{key}-cartoon')
     if with_night:
         b.js("document.getElementById('sun-toggle').click()")
+        b.js("(() => { document.getElementById('sun-date').value = '2027-01-15'; document.getElementById('sun-date').dispatchEvent(new Event('input')); const t = document.getElementById('sun-time'); t.value = 840; t.dispatchEvent(new Event('input')); })()")
+        b.pump(4)
+        bare = b.js("(() => { let r = false; three.scene.traverse(o => { if (o.isInstancedMesh && o.userData.tree && o.material.transparent && !o.castShadow) r = true; }); return r; })()")
+        r.check(f'{key}: bomen kaal in de winter', b.js("treeSeason() === 'winter'") and bare)
+        b.screenshot(f'{key}-winter')
         b.js("(() => { document.getElementById('sun-date').value = '2026-06-21'; const t = document.getElementById('sun-time'); t.value = 1380; t.dispatchEvent(new Event('input')); })()")
         b.pump(3)
         r.check(f'{key}: nacht met verlichte ramen', b.js('nightFactor() === 1 && three.windows && three.windows.mesh.visible'),
@@ -247,7 +252,18 @@ def test_tools(b, r, key):
     b.js("document.getElementById('measure-clear').click()")
     b.js("(() => { const s = document.getElementById('env-layer'); s.value = 'geluid'; s.dispatchEvent(new Event('change')); })()")
     r.check(f'{key}: omgevingslaag met legenda', b.wait_for("!!map.getLayer('env-layer') && document.getElementById('env-legend-img').naturalWidth > 0", 30))
+    b.js("(() => { const s = document.getElementById('env-layer'); s.value = 'radar'; s.dispatchEvent(new Event('change')); })()")
+    ok = b.wait_for("radar.frames.length > 0 && !!map.getLayer('radar-0')", 30)
+    first = b.js("document.getElementById('radar-time').textContent")
+    b.pump(2.5)
+    r.check(f'{key}: regenradar laadt en speelt af', ok and b.js("document.getElementById('radar-time').textContent") != first,
+            f"{b.js('radar.frames.length')} beelden, {first}")
+    b.js("map.jumpTo({zoom: 7.5})")
+    b.pump(4)
+    b.screenshot(f'{key}-radar')
     b.js("(() => { const s = document.getElementById('env-layer'); s.value = ''; s.dispatchEvent(new Event('change')); })()")
+    b.pump(1)
+    r.check(f'{key}: regenradar stopt', b.js("!radar.active && !map.getLayer('radar-0')"))
 
 
 def main():

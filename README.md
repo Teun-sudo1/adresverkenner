@@ -1,8 +1,17 @@
-# Adresrapport
+# Adresverkenner
 
-Een webapp die alles over een Nederlands adres op één kaart zet: het gebouw (BAG, 3D BAG), de grond (BRK), de buurt (CBS), erfgoed (RCE), klimaat- en milieurisico's, zonnepotentie en schaduw, en een watersimulatie voor hevige regen en overstromingen. Alles draait in de browser op open data; er is geen eigen server of API-sleutel.
+Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de buurt, en wat er gebeurt bij hevige regen of een overstroming. Alles draait in de browser op open data van onder meer het Kadaster, het CBS, de Rijksdienst voor het Cultureel Erfgoed, het RIVM en de Klimaateffectatlas. Er is geen eigen server en er zijn geen API-sleutels nodig. (In de app zelf heet het rapport "Adresrapport".)
 
-**Live:** https://teun-sudo1.github.io/adresverkenner/ · **Code:** https://github.com/Teun-sudo1/adresverkenner
+**Probeer het:** https://teun-sudo1.github.io/adresverkenner/
+
+## Wat kun je ermee
+
+- **Adresrapport:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS, klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Ook te printen als pdf.
+- **3D:** de omgeving tot 250 m in 3D, met echte dakvormen dichtbij, bomen, en een speelse cartoonstijl.
+- **Zon en schaduw:** schaduwen op elk tijdstip, een zonuren-kaart per dag, nachtweergave met verlichte ramen, en bomen per seizoen.
+- **Water:** hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels, plus de actuele regenradar.
+- **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, omgevingslagen (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
+- **Overal bruikbaar:** licht en donker thema, telefoonweergave, en deelbare links per adres.
 
 ## Starten
 
@@ -33,7 +42,8 @@ python3 -m http.server 8000
 | `js/solar.js` | Zonnepanelen-schatting per dakvlak |
 | `js/sunhours.js` | Zonuren-kaart (schaduw over het AHN-oppervlaktemodel) |
 | `js/layers.js` | Omgevingslagen (WMS) met legenda |
-| `js/trees.js` | Bomen uit de BGT, in 2D en 3D |
+| `js/radar.js` | Live regenradar (RainViewer), afgelopen 2 uur als lus |
+| `js/trees.js` | Bomen uit de BGT, in 2D en 3D, met seizoenen |
 | `js/tools.js` | Meten en kaart opslaan als afbeelding |
 | `js/app.js` | Print, telefoonweergave, welkomstscherm, deellinks en opstart |
 | `css/app.css` | Alle opmaak, met kleurvariabelen voor licht en donker |
@@ -59,6 +69,7 @@ Alle bronnen worden direct vanuit de browser opgevraagd en moeten dus CORS toest
 | RCE (openbaar WFS en geovoorziening) | Rijksmonumenten en beschermde stads- en dorpsgezichten | `report.js` |
 | Klimaateffectatlas (WMS, WCS, opslag) | Overstromingsdieptes, overstromingskans, bodemdaling, paalrot, hitte, de hevige-regen-COG | `config.js`, `report.js`, `layers.js` |
 | RIVM Atlas Leefomgeving (WMS) | Geluid, NO₂, fijnstof, boomhoogte, groen | `report.js`, `layers.js` |
+| RainViewer (API en tegels) | Live regenradar, afgelopen 2 uur in stappen van 10 minuten | `radar.js` |
 
 Bibliotheken (vastgepinde versies van CDN): MapLibre GL 4.7.1, fflate 0.8.2, d3-array 3.2.4 en d3-contour 4.0.2 (alleen in de worker), three.js 0.160.0 (pas geladen bij 3D).
 
@@ -76,11 +87,11 @@ De Klimaateffectatlas en het RIVM zetten een datum in hun laagnamen, zoals `_202
 
 ### Cache
 
-Antwoorden van GET-verzoeken worden een dag bewaard (bij een serverfout wordt eenmaal opnieuw geprobeerd) in de Cache Storage van de browser (`cachedFetch` in `js/config.js`). Verandert de vorm van de opgehaalde data, verhoog dan `CACHE_NAME` (bijvoorbeeld naar `adresrapport-v2`), zodat oude antwoorden niet meer gebruikt worden. Berekend water wordt per adres en scenario in het geheugen bewaard zolang de pagina open is.
+Antwoorden van GET-verzoeken worden een dag bewaard in de Cache Storage van de browser (`cachedFetch` in `js/config.js`). Bij een netwerkhapering of serverfout probeert `fetchWithRetry` het eenmaal opnieuw; die helper wordt ook in de water-worker gebruikt. De regenradar gaat altijd langs de cache heen, omdat die elke paar minuten verandert. Verandert de vorm van de opgehaalde data, verhoog dan `CACHE_NAME` (bijvoorbeeld naar `adresrapport-v2`), zodat oude antwoorden niet meer gebruikt worden. Berekend water wordt per adres en scenario in het geheugen bewaard zolang de pagina open is.
 
 ### Testen
 
-`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport, watersimulatie (loopt het water echt op?), 3D, cartoon, zon en nacht, bomen, meten en omgevingslagen. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
+`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport, watersimulatie (loopt het water echt op?), 3D, cartoon, zon en nacht, bomen en seizoenen, meten, omgevingslagen en de regenradar. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
 
 ```sh
 pip install websocket-client
@@ -100,13 +111,13 @@ Safari is niet automatisch getest. Eerder bleek Safari strenger met het uitpakke
 
 - De watersimulatie toont de piekdiepte uit het model, geen tijdsverloop; de schuif is een benadering.
 - Zonnepanelen zijn een schatting zonder schaduw van bomen en buren.
-- Bomen zijn een optioneel onderdeel van de BGT; niet elke gemeente houdt ze volledig bij.
+- Bomen zijn een optioneel onderdeel van de BGT; niet elke gemeente houdt ze volledig bij. De BGT kent geen boomsoort, dus alle bomen worden als loofboom getoond (kaal in de winter).
+- De regenradar komt van de gratis RainViewer-API: tegels tot zoomniveau 7 (ongeveer 1 km per pixel) en de afgelopen 2 uur, zonder voorspelling.
 - Gemeentelijke monumenten, energielabels (EP-Online, API-sleutel nodig) en WOZ-waardes per adres zijn niet als open data beschikbaar.
 - three.js tekent buiten MapLibre om. De hover in 3D gebruikt daarom een eigen straal, die een gewoon MapLibre-blok vóór een boom niet ziet.
 
 ## Ideeën voor later
 
-- Live regenradar als laag over de kaart (nog uitzoeken welke open bron zonder sleutel en met CORS werkt).
 - Deellink die ook de weergave onthoudt (3D, zon, scenario, laag).
 - Tijdreis met historische luchtfoto's.
 - Twee adressen vergelijken; bulkmodus met CSV-export.

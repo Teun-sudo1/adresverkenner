@@ -26,6 +26,7 @@ function isRaining() {
 
 function updateRain() {
   $('rain-row').hidden = waterScenario !== 'regen70';
+  $('show-radar').hidden = waterScenario !== 'regen70';
   if (isRaining()) {
     if (!rain.frame) {
       rain.last = performance.now();

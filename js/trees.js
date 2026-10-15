@@ -7,7 +7,38 @@
 
 const BGT_TREES = 'https://api.pdok.nl/lv/bgt/ogc/v1/collections/vegetatieobject_punt/items';
 const DEFAULT_TREE_HEIGHT = 6;
-const trees = { on: true, list: [], version: 0, heightsFor: null, ready: Promise.resolve() };
+const trees = { on: true, list: [], version: 0, heightsFor: null, ready: Promise.resolve(), season: null };
+
+// ---------- Seasons ----------
+
+// The season follows the date in the sun panel (today by default). The BGT
+// has no species, so every tree is treated as deciduous.
+const TREE_SEASONS = {
+  lente: { label: 'lente', crown: 0.85, cartoon: ['#b5e48c', '#99d98c', '#a7c957', '#76c893'], real: ['#7fa65a', '#8db463', '#6f9a4e', '#98bd6c'], flat: '#99d98c' },
+  zomer: { label: 'zomer', crown: 1, cartoon: ['#7bc950', '#5fae3e', '#9ad65c', '#4f9a34'], real: ['#4f7f3a', '#5b8c41', '#466f33', '#628f48'], flat: '#5fae3e' },
+  herfst: { label: 'herfst', crown: 0.9, cartoon: ['#e76f51', '#f4a261', '#e9c46a', '#d4a373', '#bc6c25'], real: ['#c4622d', '#d99a3e', '#b5852a', '#9c5a2a'], flat: '#e9a23b' },
+  // Bare: a faint crown of branches that hardly casts shade.
+  winter: { label: 'winter (kaal)', crown: 0.9, bare: true, flat: '#9c8b7a' }
+};
+
+function treeSeason() {
+  const d = sunDate(720);
+  const mmdd = (d.getMonth() + 1) * 100 + d.getDate();
+  if (mmdd >= 321 && mmdd < 501) return 'lente';
+  if (mmdd >= 501 && mmdd < 1001) return 'zomer';
+  if (mmdd >= 1001 && mmdd < 1121) return 'herfst';
+  return 'winter';
+}
+
+// Called when the date changes: redraw the trees only if the season did.
+function updateTreeSeason() {
+  const season = treeSeason();
+  if (season === trees.season) return;
+  trees.season = season;
+  trees.version++;
+  updateTreeLayer();
+  applyBuildingStyle();
+}
 
 // A wider crown for taller trees, within sensible bounds (metres).
 const crownRadius = h => Math.min(7, Math.max(1.5, 0.25 * h + 0.5));
@@ -79,6 +110,10 @@ async function loadTreeHeights(ctx) {
 // Flat map: crowns as circles at their estimated width in metres.
 async function updateTreeLayer() {
   await mapReady;
+  trees.season ??= treeSeason();
+  const look = TREE_SEASONS[trees.season];
+  map.setPaintProperty('bomen', 'circle-color', look.flat);
+  map.setPaintProperty('bomen', 'circle-opacity', look.bare ? 0.35 : 0.55);
   setLayerData('bomen', trees.list.map(t => ({
     type: 'Feature',
     geometry: { type: 'Point', coordinates: [t.lon, t.lat] },
@@ -96,6 +131,8 @@ function addTrees(scene, frame, castShadow) {
   trunkGeom.rotateX(Math.PI / 2);
   trunkGeom.translate(0, 0, 0.5);
   const crownGeom = new THREE.IcosahedronGeometry(1, cartoon ? 1 : 2);
+  trees.season ??= treeSeason();
+  const look = TREE_SEASONS[trees.season];
   const gradient = new THREE.DataTexture(new Uint8Array([90, 170, 255]), 3, 1, THREE.RedFormat);
   gradient.minFilter = gradient.magFilter = THREE.NearestFilter;
   gradient.needsUpdate = true;
@@ -103,22 +140,25 @@ function addTrees(scene, frame, castShadow) {
     ? new THREE.MeshToonMaterial({ gradientMap: gradient })
     : new THREE.MeshLambertMaterial();
   const trunks = new THREE.InstancedMesh(trunkGeom, material(), n);
-  const crowns = new THREE.InstancedMesh(crownGeom, material(), n);
-  const greens = cartoon ? ['#7bc950', '#5fae3e', '#9ad65c', '#4f9a34'] : ['#4f7f3a', '#5b8c41', '#466f33', '#628f48'];
+  const crowns = new THREE.InstancedMesh(crownGeom, look.bare
+    ? new THREE.MeshLambertMaterial({ transparent: true, opacity: 0.3, depthWrite: false })
+    : material(), n);
+  const leaves = look.bare ? ['#7a6a5a'] : cartoon ? look.cartoon : look.real;
   const trunkColor = new THREE.Color().setStyle(cartoon ? '#8b5a2b' : '#6b4f3a');
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3();
   trees.list.forEach((t, i) => {
     const [x, y] = frame.fromLngLat([t.lon, t.lat]);
-    const r = crownRadius(t.h);
-    const trunkH = Math.max(1, t.h - 1.6 * r);
+    const full = crownRadius(t.h), r = full * look.crown;
+    const trunkH = Math.max(1, t.h - 1.6 * full);
     const trunkR = Math.min(0.45, 0.12 + 0.012 * t.h);
     trunks.setMatrixAt(i, m.compose(p.set(x, y, 0), q, s.set(trunkR, trunkR, trunkH + 0.3 * r)));
     trunks.setColorAt(i, trunkColor);
-    crowns.setMatrixAt(i, m.compose(p.set(x, y, trunkH + 0.8 * r), q, s.set(r, r, r * 0.9)));
-    crowns.setColorAt(i, new THREE.Color().setStyle(greens[hashId(String(t.id)) % greens.length]));
+    crowns.setMatrixAt(i, m.compose(p.set(x, y, trunkH + 0.8 * full), q, s.set(r, r, r * 0.9)));
+    crowns.setColorAt(i, new THREE.Color().setStyle(leaves[hashId(String(t.id)) % leaves.length]));
   });
   for (const mesh of [trunks, crowns]) {
-    mesh.castShadow = castShadow;
+    // Bare winter crowns let most sunlight through.
+    mesh.castShadow = castShadow && !(look.bare && mesh === crowns);
     mesh.receiveShadow = castShadow && cartoon;
     mesh.frustumCulled = false;
     mesh.userData.tree = true;
