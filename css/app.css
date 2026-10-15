@@ -146,7 +146,7 @@ tr.current td { background: var(--current); font-weight: 600; }
 #flood label.check { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; font-weight: 400; cursor: pointer; }
 #flood label.check[hidden] { display: none; }
 
-#sun { top: 10px; right: 52px; width: 240px; padding: 8px 10px; font-size: 12px; }
+#sun { top: 10px; right: 68px; width: 240px; padding: 8px 10px; font-size: 12px; }
 #sun[hidden] { display: none; }
 #sun label { display: block; font-weight: 600; margin-bottom: 2px; }
 #sun .row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
@@ -345,7 +345,8 @@ body.panel-hidden #panel-show { display: block; }
   /* Where the drawer was: the button that brings it back. */
   #panel-show { top: auto; bottom: calc(52px + env(safe-area-inset-bottom, 0px)); padding: 10px 20px; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
   /* Only the active Regen/Zon panels, as cards at the top; the map stays visible below. */
-  body.show-cards:not(.controls-open) #map-controls { display: flex; bottom: auto; max-height: calc(100% - 96px - 140px); }
+  /* Cards leave the dial on the right free. */
+  body.show-cards:not(.controls-open) #map-controls { display: flex; bottom: auto; right: 76px; max-height: calc(100% - 96px - 140px); }
   body.show-cards:not(.controls-open) #map-controls > :not(#left-stack):not(#sun),
   body.show-cards:not(.controls-open) #left-stack > :not(#rainlive):not(#flood) { display: none; }
   #rainlive details, #rainlive > p.hint:last-child { display: none; }
