@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adresrapport</title>
+  <script>
+    // Apply the saved or system theme before first paint.
+    (() => {
+      let t = null;
+      try { t = localStorage.getItem('adresrapport.theme'); } catch {}
+      document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    })();
+  </script>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="welcome" class="overlay" hidden>
+  <div class="welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+    <button id="welcome-close" type="button" aria-label="Sluiten">×</button>
+    <h2 id="welcome-title">Welkom bij Adresrapport</h2>
+    <p class="lead">Alles over een Nederlands adres op één plek: het gebouw, de grond eronder, de buurt en wat er gebeurt bij hevige regen of een overstroming. Gemaakt met open data van onder meer het Kadaster, het CBS en de Klimaateffectatlas.</p>
+    <div id="welcome-search-slot"></div>
+    <p id="welcome-status" class="hint" role="status"></p>
+    <p class="examples">Of probeer:
+      <button type="button" class="link" data-id="adr-8f4d573be765b4c80dd635ba73747903">Damrak 1, Amsterdam</button> ·
+      <button type="button" class="link" data-id="adr-52d81e8de2de65f13c910a53e1a477f9">Van Heukelomstraat 201, Rotterdam</button>
+    </p>
+    <div class="tiles">
+      <div class="tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
+        <h3>Adresrapport</h3>
+        <p>Bouwjaar, oppervlakte, hoogte, perceel en buurtcijfers van het CBS. Ook te printen als pdf.</p>
+      </div>
+      <div class="tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>
+        <h3>3D en cartoon</h3>
+        <p>Bekijk de omgeving tot 250 m in 3D, realistisch of als speelse cartoon.</p>
+      </div>
+      <div class="tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
+        <h3>Kleuren en filteren</h3>
+        <p>Kleur panden op bouwjaar, status of gebruiksdoel en verberg wat je niet wilt zien.</p>
+      </div>
+      <div class="tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>
+        <h3>Water simuleren</h3>
+        <p>Zie hoe diep het water komt bij hevige regen of een overstroming, en laat het stijgen.</p>
+      </div>
+    </div>
+    <p class="disclaimer">Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. De waterkaarten zijn modelscenario's: ze geven een indicatie, geen voorspelling voor een specifiek adres.</p>
+    <button id="welcome-start" type="button">Naar de kaart</button>
+  </div>
+</div>
+<div id="loadbar" hidden role="progressbar" aria-label="Gegevens laden"></div>
+<div id="app">
+  <aside id="panel">
+    <button type="button" id="panel-handle" aria-expanded="true" aria-label="Rapport in- of uitklappen"><span></span></button>
+    <div class="titlebar">
+      <h1>Adresrapport</h1>
+      <button id="help" class="secondary" type="button" aria-label="Uitleg" title="Uitleg">?</button>
+      <button id="theme" class="secondary" type="button" aria-label="Donkere modus" title="Donker / licht">☾</button>
+      <button id="print" class="secondary" type="button" hidden>Print / PDF</button>
+    </div>
+    <form id="search" autocomplete="off">
+      <input id="q" type="search" placeholder="Bijv. Damrak 1 Amsterdam" required
+             role="combobox" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false">
+      <button id="go" type="submit">Zoek</button>
+      <ul id="suggestions" role="listbox" hidden></ul>
+    </form>
+    <p class="hint">Of klik op de kaart om het dichtstbijzijnde adres op te halen.</p>
+    <div id="status"></div>
+
+    <div id="recent" hidden>
+      <div class="section">
+        <h2>Recent gezocht</h2>
+        <ul id="recent-list"></ul>
+      </div>
+    </div>
+
+    <div id="result" hidden>
+      <img id="print-map" alt="Kaart van het adres">
+      <div class="address" id="r-address"></div>
+      <div class="sub" id="r-place"></div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="k">Bouwjaar</div><div class="v" id="r-bouwjaar">–</div><div class="s" id="r-leeftijd"></div></div>
+        <div class="kpi"><div class="k">Oppervlakte</div><div class="v" id="r-opp">–</div><div class="s">dit verblijfsobject</div></div>
+      </div>
+
+      <div class="section">
+        <h2>Pand</h2>
+        <dl>
+          <dt>Pand-ID</dt><dd id="r-pandid">–</dd>
+          <dt>Status</dt><dd id="r-pandstatus">–</dd>
+          <dt>Gebruiksdoelen</dt><dd id="r-panddoel">–</dd>
+          <dt>Verblijfsobjecten</dt><dd id="r-aantal">–</dd>
+          <dt>Totale opp.</dt><dd id="r-totaal">–</dd>
+          <dt>Grondvlak</dt><dd id="r-footprint">–</dd>
+          <dt>Hoogte</dt><dd id="r-hoogte">–</dd>
+          <dt>Bouwlagen</dt><dd id="r-lagen">–</dd>
+          <dt>Daktype</dt><dd id="r-dak">–</dd>
+          <dt>Volume</dt><dd id="r-volume">–</dd>
+          <dt>Maaiveld</dt><dd id="r-maaiveld">–</dd>
+        </dl>
+        <p class="note"><a id="r-bagviewer" href="#" target="_blank" rel="noopener">Bekijk in BAG Viewer ↗</a></p>
+      </div>
+
+      <div class="section" id="solar-section" hidden>
+        <h2>Zonnepanelen (schatting)</h2>
+        <p id="solar-headline" class="years-headline"></p>
+        <dl>
+          <dt>Geschikte dakvlakken</dt><dd id="r-solar-planes">–</dd>
+          <dt>Panelen</dt><dd id="r-solar-panels">–</dd>
+          <dt>Opbrengst</dt><dd id="r-solar-yield">–</dd>
+        </dl>
+        <div class="tablewrap">
+          <table id="solar-table"><thead><tr><th>Dakvlak</th><th class="num">m²</th><th>Geschiktheid</th></tr></thead><tbody></tbody></table>
+        </div>
+        <p class="note"><button type="button" class="link" id="solar-show">Toon de daken op de kaart (3D)</button></p>
+        <p class="note">Indicatie uit de 3D BAG-dakvlakken (oriëntatie en helling), met ~950 kWh per kWp per jaar op een ideaal dak en panelen van 420 Wp (1,75 m²). Schaduw van bomen en buren en obstakels op het dak zijn niet meegerekend; bekijk schaduw met de knop Zon. Bij een pand met meerdere woningen gaat het om het hele dak.</p>
+      </div>
+
+      <div class="section">
+        <h2>Verblijfsobject</h2>
+        <dl>
+          <dt>VBO-ID</dt><dd id="r-vboid">–</dd>
+          <dt>Gebruiksdoel</dt><dd id="r-doel">–</dd>
+          <dt>Status</dt><dd id="r-vbostatus">–</dd>
+        </dl>
+      </div>
+
+      <div class="section">
+        <h2>Perceel</h2>
+        <dl>
+          <dt>Kadastraal</dt><dd id="r-perceel">–</dd>
+          <dt>Perceelgrootte</dt><dd id="r-perceelopp">–</dd>
+          <dt>Bebouwd</dt><dd id="r-bebouwd">–</dd>
+        </dl>
+      </div>
+
+      <div class="section" id="heritage-section" hidden>
+        <h2>Erfgoed</h2>
+        <dl>
+          <dt>Rijksmonument</dt><dd id="r-monument">–</dd>
+          <dt>Beschermd gezicht</dt><dd id="r-gezicht">–</dd>
+          <dt>Rijksmonumenten</dt><dd id="r-monumenten-nabij">–</dd>
+        </dl>
+        <p class="note">Bron: Rijksdienst voor het Cultureel Erfgoed. Gemeentelijke monumenten staan niet in een landelijke open dataset; vraag die na bij de gemeente.</p>
+      </div>
+
+      <div class="section">
+        <h2>Locatie</h2>
+        <dl>
+          <dt>Postcode</dt><dd id="r-postcode">–</dd>
+          <dt>Buurt</dt><dd id="r-buurt">–</dd>
+          <dt>Wijk</dt><dd id="r-wijk">–</dd>
+          <dt>Gemeente</dt><dd id="r-gemeente">–</dd>
+          <dt>Provincie</dt><dd id="r-provincie">–</dd>
+          <dt>Bomen</dt><dd id="r-bomen">–</dd>
+          <dt>Coördinaten</dt><dd id="r-coords">–</dd>
+        </dl>
+      </div>
+
+      <div class="section" id="env-section" hidden>
+        <h2>Klimaat en omgeving</h2>
+        <div id="env"></div>
+        <p class="note">Bronnen: Klimaateffectatlas (overstroming, bodemdaling, paalrot, hitte) en RIVM Atlas Leefomgeving (geluid, luchtkwaliteit). Waarden gelden voor de locatie of de buurt, niet specifiek voor dit pand.</p>
+      </div>
+
+      <div class="section" id="cbs-section" hidden>
+        <h2>Buurt in cijfers</h2>
+        <div id="cbs"></div>
+        <p class="note">Bron: CBS Wijken en Buurten. Per kengetal het meest recente jaar met een gepubliceerde waarde; ontbrekende waarden zijn geheim of nog niet beschikbaar.</p>
+      </div>
+
+      <div class="section" id="years-section" hidden>
+        <h2>Bouwjaren in de omgeving</h2>
+        <p id="years-headline" class="years-headline"></p>
+        <div class="chart" id="years-chart"></div>
+        <details class="hint"><summary>Toon als tabel</summary><table id="years-table"><thead><tr><th>Periode</th><th class="num">Panden</th></tr></thead><tbody></tbody></table></details>
+        <p class="note" id="years-note"></p>
+      </div>
+
+      <div class="section" id="units-section" hidden>
+        <h2>Verblijfsobjecten in dit pand</h2>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Adres</th><th>Gebruiksdoel</th><th class="num">m²</th></tr></thead>
+            <tbody id="units"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="note">Bron: BAG, BRK en Locatieserver via PDOK; hoogtes uit 3D BAG (TU Delft / 3DGI). BAG kent oppervlakte per verblijfsobject, niet per pand; de totale oppervlakte is de som van alle verblijfsobjecten in het pand. Grondvlak is berekend uit de pandcontour. Hoogte is de typische dakhoogte (70e percentiel) boven maaiveld.</p>
+    </div>
+  </aside>
+
+  <div id="mapwrap">
+    <div id="map"></div>
+    <canvas id="rain-canvas" aria-hidden="true"></canvas>
+    <div id="layers" class="mapctl" role="group" aria-label="Achtergrondkaart">
+      <button type="button" data-layer="brt" aria-pressed="true">Kaart</button>
+      <button type="button" data-layer="luchtfoto" aria-pressed="false">Luchtfoto</button>
+    </div>
+    <div id="view-btns" class="mapctl" role="group" aria-label="Weergave">
+      <button type="button" id="view3d" aria-pressed="false" title="Toon panden in 3D rond het adres">3D</button>
+      <button type="button" id="cartoon" aria-pressed="false">Cartoon</button>
+      <button type="button" id="sun-toggle" aria-pressed="false" title="Zonnestand en schaduwen (zet 3D aan)">Zon</button>
+      <button type="button" id="trees-toggle" aria-pressed="true" title="Bomen uit de BGT tonen of verbergen">Bomen</button>
+    </div>
+    <button type="button" id="controls-toggle" class="mapctl" aria-expanded="false" aria-controls="map-controls">Opties</button>
+    <!-- Map controls; on a phone they fold into one scrollable sheet behind "Opties". -->
+    <div id="map-controls">
+      <div id="sun" class="mapctl" hidden>
+        <label for="sun-date">Zon en schaduw</label>
+        <div class="row">
+          <input id="sun-date" type="date">
+          <span id="sun-clock">12:00</span>
+        </div>
+        <div class="row">
+          <button id="sun-play" type="button" aria-label="Laat de zon een dag lang bewegen">▶</button>
+          <input id="sun-time" type="range" min="0" max="1435" step="5" aria-label="Tijdstip">
+        </div>
+        <div id="sun-info" class="hint"></div>
+        <div class="row"><button id="sunhours-btn" type="button" class="secondary" aria-pressed="false">Zonuren op deze dag</button></div>
+        <div id="sunhours-legend" hidden>
+          <div class="ramp sun-ramp"></div>
+          <div class="ramp-labels"><span>0 uur</span><span id="sunhours-max"></span></div>
+        </div>
+        <div id="sunhours-info" class="hint"></div>
+      </div>
+      <div id="right-stack">
+        <div id="tools" class="mapctl">
+          <label>Meten</label>
+          <div class="seg" role="group" aria-label="Meten">
+            <button type="button" id="measure-dist" aria-pressed="false">Afstand</button>
+            <button type="button" id="measure-area" aria-pressed="false">Oppervlakte</button>
+          </div>
+          <div id="measure-panel" hidden>
+            <div id="measure-result"></div>
+            <div id="measure-hint" class="hint"></div>
+            <button type="button" class="link" id="measure-clear">Meting wissen</button>
+          </div>
+          <button type="button" id="save-image" class="full">Kaart opslaan als afbeelding</button>
+        </div>
+        <div id="envlayer" class="mapctl">
+          <label for="env-layer">Omgevingslaag</label>
+          <select id="env-layer"><option value="">Geen</option></select>
+          <div id="env-legend" hidden>
+            <img id="env-legend-img" alt="">
+            <div id="env-source" class="hint"></div>
+          </div>
+        </div>
+      </div>
+      <div id="flood" class="mapctl">
+        <label for="flood-scenario">Water simuleren</label>
+        <select id="flood-scenario">
+          <option value="">Uit</option>
+          <option value="regen70">Hevige regen: 70 mm in 1 uur</option>
+          <optgroup label="Overstroming (van vaak naar zeldzaam)">
+            <option value="ov_grote">ca. 1× per 10 jaar (grote kans)</option>
+            <option value="ov_middelgrote">ca. 1× per 100 jaar (middelgrote kans)</option>
+            <option value="ov_kleine">ca. 1× per 1.000 jaar (kleine kans)</option>
+            <option value="ov_zeer_kleine">ca. 1× per 10.000 jaar (zeer kleine kans)</option>
+            <option value="ov_extreem_kleine">nog zeldzamer (extreem kleine kans)</option>
+          </optgroup>
+        </select>
+        <div class="hint" id="flood-scenario-hint" hidden>Hoe zeldzamer het scenario, hoe extremer de overstroming: een kleinere kans geeft dus meer water, een grotere kans vaak geen.</div>
+        <div id="flood-controls" hidden>
+          <div class="sublabel">Waterstand t.o.v. de piek</div>
+          <div class="row">
+            <button id="flood-play" type="button" aria-label="Laat het water stijgen tot de piek">▶</button>
+            <input id="flood-level" type="range" min="0" max="100" value="100" aria-label="Waterstand ten opzichte van de piek">
+            <span id="flood-pct">piek</span>
+          </div>
+          <div id="flood-now"></div>
+          <label class="check" id="rain-row" hidden><input type="checkbox" id="rain-toggle"> Regendruppels tonen tijdens de bui</label>
+          <div class="ramp"></div>
+          <div class="ramp-labels"><span>2 cm</span><span>30 cm</span><span>1 m</span><span>≥ 2 m</span></div>
+          <div id="flood-info" class="hint"></div>
+          <details class="hint"><summary>Wat is de piek?</summary><div id="flood-explain"></div></details>
+        </div>
+      </div>
+      <div id="legend" class="mapctl">
+        <label for="color-by">Kleur panden op</label>
+        <select id="color-by">
+          <option value="bouwjaar">Bouwjaar</option>
+          <option value="status">Status</option>
+          <option value="functie">Gebruiksdoel</option>
+          <option value="zon">Zonnepotentie daken (3D)</option>
+          <option value="">Geen</option>
+        </select>
+        <ul id="legend-items"></ul>
+        <div class="hint" id="legend-filter-hint">Klik een categorie aan of uit om panden te filteren.</div>
+        <div class="hint" id="legend-hint">Zoom verder in om de panden te zien.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Classic scripts sharing one global scope, so the page also works opened
+     straight from disk (file://), where ES modules are blocked. Order matters. -->
+<script src="js/config.js"></script>
+<script src="js/map.js"></script>
+<script src="js/buildings.js"></script>
+<script src="js/report.js"></script>
+<script src="js/tiff.js"></script>
+<script src="js/water.js"></script>
+<script src="js/rain.js"></script>
+<script src="js/solar.js"></script>
+<script src="js/sunhours.js"></script>
+<script src="js/layers.js"></script>
+<script src="js/trees.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

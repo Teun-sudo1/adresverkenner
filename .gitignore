@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Output of the smoke test (screenshots, logs)
+tests/output/
+
+# Python
+__pycache__/
+*.pyc
