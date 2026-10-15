@@ -588,7 +588,38 @@ function setFloodPanel(open) {
     $('flood-scenario').dispatchEvent(new Event('change'));
   }
   updatePhoneCards(open);
+  if (open) updateFloodNap();
 }
+
+// Ground level at the address relative to NAP (roughly mean sea level), at
+// the top of the panel. 3D BAG gives it per building; addresses without a
+// building (houseboats, pitches) use the AHN terrain model around the point.
+async function updateFloodNap() {
+  const ctx = current;
+  if (!ctx) { $('flood-nap').hidden = true; return; }
+  let v = ctx.maaiveld;
+  if (v == null) {
+    if (!floodPanel.open || ctx.napTried) return;
+    ctx.napTried = true;
+    try {
+      // On the water itself the terrain model is empty: look further out, to the quay.
+      for (const r of [5, 15, 30]) {
+        const g = await fetchCoverage(AHN_WCS, 'dtm_05m', [ctx.x - r, ctx.y - r, ctx.x + r, ctx.y + r].map(Math.round), 'x', 'y');
+        const valid = [...g.data].filter(h => Math.abs(h) < 500).sort((a, b) => a - b);
+        if (valid.length) { v = valid[Math.floor(valid.length / 2)]; break; }
+      }
+      if (v == null || current !== ctx || ctx.maaiveld != null) return;
+    } catch (err) {
+      console.error(err);
+      return;
+    }
+  }
+  if (current !== ctx) return;
+  const where = Math.abs(v) < 0.05 ? 'op NAP-hoogte' : `${nf1.format(Math.abs(v))} m ${v < 0 ? 'onder' : 'boven'} NAP`;
+  $('flood-nap').textContent = `Maaiveld bij dit adres: ${where}${v < 0 ? ', onder zeeniveau' : ''}.`;
+  $('flood-nap').hidden = false;
+}
+
 $('flood-toggle').addEventListener('click', () => setFloodPanel(!floodPanel.open));
 $('flood-close').addEventListener('click', () => setFloodPanel(false));
 $('flood-level').addEventListener('input', applyWaterLevel);

@@ -17,6 +17,8 @@ async function loadHeight(pandId, stale) {
     setField('r-dak', ROOF_TYPES[a.b3_dak_type] ?? a.b3_dak_type);
     setField('r-volume', a.b3_volume_lod22 != null ? `${nf.format(Math.round(a.b3_volume_lod22))} m³` : null);
     setField('r-maaiveld', `${nf1.format(a.b3_h_maaiveld)} m t.o.v. NAP`);
+    current.maaiveld = a.b3_h_maaiveld;
+    updateFloodNap();
     // The same item carries the detailed roof planes for the solar estimate.
     const own = parseLod22({ metadata: item.metadata, features: [item.feature] }).find(([id]) => id === pandId);
     renderSolar(own?.[1]);
@@ -202,7 +204,9 @@ function resetResult() {
   for (const id of ['r-monument', 'r-gezicht', 'r-monumenten-nabij']) setField(id, null);
   $('years-section').hidden = true;
   $('years-chart').replaceChildren();
-  for (const s of ['pand', 'perceel', 'buurt', 'scene3d', 'monumenten', 'bomen']) setLayerData(s, []);
+  for (const s of ['pand', 'perceel', 'buurt', 'scene3d', 'monumenten', 'bomen', 'lantaarns']) setLayerData(s, []);
+  lights.list = [];
+  lights.version++;
   trees.list = [];
   trees.version++;
 }
@@ -370,6 +374,8 @@ async function loadAddress(lsId, { pushHistory = true, camera = null } = {}) {
     highlight3D([]);
     if (is3D) loadScene();
     if (sun.on) updateSun();
+    $('flood-nap').hidden = true;
+    updateFloodNap();
     if (waterScenario) loadWater();
     const parcels = loadParcels(doc.gekoppeld_perceel || [], [lon, lat], stale);
     loadBuurt(lon, lat, stale);
@@ -381,6 +387,7 @@ async function loadAddress(lsId, { pushHistory = true, camera = null } = {}) {
     loadHeritage(current, pandenKnown, stale);
     loadYearProfile(current, pandenKnown.then(p => p[0]?.properties.bouwjaar ?? null), stale);
     loadTrees(current, stale);
+    loadLights(current, stale);
     onRainPlaceChanged();
     if (is3D) loadTreeHeights(current).catch(err => console.error(err));
 

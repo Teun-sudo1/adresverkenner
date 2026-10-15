@@ -10,6 +10,8 @@ const ALO_WMS = 'https://data.rivm.nl/geo/alo/wms';
 // Half-width in metres of the area loaded for the 3D view: 500 × 500 m is
 // typically 500–1,500 building parts in a single ~1 MB request.
 const SCENE_RADIUS = 250;
+// Simple blocks around the detailed scene, so the 3D view reaches further.
+const SCENE_RADIUS_OUTER = 750;
 // Half-width in metres around the address with real roof shapes (3D BAG LoD
 // 2.2): those models are heavy, so only the nearby buildings get them.
 const DETAIL_RADIUS = 60;

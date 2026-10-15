@@ -170,6 +170,8 @@ def open_address(b, base_url, address_id):
     b.js("setTheme('light', true); localStorage.setItem('adresrapport.welcomeSeen', '1')")
     # Headless Chrome renders on the CPU and would trip the automatic switch to Snel.
     b.js("quality.setting = 'mooi'; localStorage.setItem('adresrapport.quality', 'mooi'); setQualityMode('mooi')")
+    # The fly-around on first opening 3D has its own test; skip it elsewhere.
+    b.js("addressId && markFlown(addressId)")
     return ready
 
 
@@ -307,6 +309,26 @@ def test_tools(b, r, key):
     r.check(f'{key}: regenradar stopt', b.js("!radar.active && !map.getLayer('radar-0') && rain.frame === 0"))
 
 
+def test_flight(b, r, key):
+    """First 3D visit to an address: a 10 s orbit from the opposite time of day back to now."""
+    b.js("localStorage.removeItem('adresrapport.flown')")
+    b.js("document.getElementById('view3d').click()")
+    started = b.wait_for('flight.frame !== 0', 60)
+    b.pump(4)
+    mid = b.js("[Math.round(map.getBearing()), document.getElementById('sun-time').value, sun.on]")
+    b.wait_for('flight.frame === 0', 20)
+    b.pump(1)
+    end = b.js("[Math.round(((map.getBearing() % 360) + 360) % 360), Math.round(map.getPitch()), sun.on]")
+    r.check(f'{key}: rondvlucht bij eerste keer 3D', started and mid[2] and end == [340, 75, False], f'halverwege {mid}, eind {end}')
+    b.js("document.getElementById('view3d').click()")
+    b.pump(1)
+    b.js("document.getElementById('view3d').click()")
+    b.pump(2)
+    r.check(f'{key}: geen rondvlucht bij tweede keer', b.js('flight.frame === 0'))
+    b.js("document.getElementById('view3d').click()")
+    b.pump(1)
+
+
 def test_share(b, r, key, base_url):
     """Sets a view, then opens the page's own URL fresh: the view must come back."""
     b.js("document.querySelector('#layers [data-layer=luchtfoto]').click()")
@@ -372,6 +394,7 @@ def main():
             test_report(b, r, key)
             b.screenshot(f'{key}-rapport')
             if key == 'rotterdam':
+                test_flight(b, r, key)
                 test_water_rises(b, r, key, 'regen70')
                 test_water_rises(b, r, key, 'ov_kleine')
             if key == 'prinsengracht':

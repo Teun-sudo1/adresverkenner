@@ -97,6 +97,8 @@ tr.current td { background: var(--current); font-weight: 600; }
 #rainlive { padding: 8px 10px; font-size: 12px; overflow-y: auto; }
 #rainlive[hidden] { display: none; }
 #flood[hidden] { display: none; }
+#flood-nap { margin: 4px 0 2px; font-weight: 600; }
+#flood-nap[hidden] { display: none; }
 #rainlive .panel-head, #flood .panel-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
 #rainlive .panel-head .link, #flood .panel-head .link { font-size: 18px; line-height: 1; color: var(--muted); }
 #rainlive .rain-now { margin-top: 4px; font-weight: 600; }
@@ -139,7 +141,7 @@ tr.current td { background: var(--current); font-weight: 600; }
   background: linear-gradient(to right, rgba(158,202,225,.55), rgba(66,146,198,.76) 25%, rgba(33,113,181,.82) 45%, rgba(8,81,156,.86) 70%, rgba(8,48,107,.9)); }
 #flood .ramp-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
 #flood-info { margin-top: 6px; }
-#rain-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#stars, #rain-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 #rain-canvas[hidden] { display: none; }
 #flood label.check { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; font-weight: 400; cursor: pointer; }
 #flood label.check[hidden] { display: none; }
@@ -210,6 +212,8 @@ tr.current td { background: var(--current); font-weight: 600; }
 :root[data-theme="dark"] .maplibregl-ctrl-group { background: var(--surface); }
 :root[data-theme="dark"] .maplibregl-ctrl-group button + button { border-top-color: var(--border); }
 :root[data-theme="dark"] .maplibregl-ctrl-group .maplibregl-ctrl-icon { filter: invert(1); }
+:root[data-theme="dark"] .dial .ring { fill: var(--surface); stroke: var(--border-strong); }
+:root[data-theme="dark"] .dial .hub, :root[data-theme="dark"] .camera-ctrl button.fly { fill: var(--text); color: var(--text); }
 :root[data-theme="dark"] .maplibregl-ctrl-attrib, :root[data-theme="dark"] .maplibregl-ctrl-scale { background: rgba(31,36,48,.8); color: var(--muted); border-color: var(--muted); }
 :root[data-theme="dark"] .maplibregl-ctrl-attrib a { color: var(--muted); }
 
@@ -256,6 +260,21 @@ table.figures tbody th { font-weight: 400; color: var(--muted); }
 #bulk-table th, #bulk-table td { white-space: nowrap; }
 #bulk-table tr.missing td { color: var(--error); }
 @media (max-width: 700px) { .pair { grid-template-columns: 1fr; } }
+.camera-ctrl button.dial { width: 48px; height: 48px; padding: 0; border-radius: 50%; cursor: grab; touch-action: none; }
+.camera-ctrl button.dial:active { cursor: grabbing; }
+.camera-ctrl { border-radius: 24px !important; display: flex; flex-direction: column; align-items: center; }
+.camera-ctrl button.fly { width: 48px; height: 32px; display: flex; align-items: center; justify-content: center; color: #333; }
+.dial svg { width: 48px; height: 48px; display: block; }
+.dial .ring { fill: #fff; stroke: #c9ced6; stroke-width: 2; }
+.dial .ticks line { stroke: #9aa1ab; stroke-width: 1.5; }
+.dial .needle { transform-origin: 24px 24px; transition: transform .08s linear; }
+.dial .north { fill: #d1242f; }
+.dial .south { fill: #9aa1ab; }
+.dial .hub { fill: #333; }
+@media (max-width: 700px) {
+  .camera-ctrl button.dial, .dial svg { width: 56px; height: 56px; }
+  .camera-ctrl button.fly { width: 56px; height: 40px; }
+}
 button.link { padding: 0; background: none; color: var(--accent); font-size: inherit; }
 button.link:hover { text-decoration: underline; }
 @media (max-width: 560px) { .tiles { grid-template-columns: 1fr; } }

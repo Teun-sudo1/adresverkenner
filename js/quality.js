@@ -66,7 +66,8 @@ function startQualityWatch() {
   setInterval(() => {
     const times = frameTimes;
     frameTimes = [];
-    if (quality.setting !== 'auto' || isFast()) return;
+    // The fly-around is a short show; don't judge the map by it.
+    if (quality.setting !== 'auto' || isFast() || flight.frame) return;
     const gaps = times.slice(1).map((t, i) => t - times[i]).filter(g => g < 500).sort((a, b) => a - b);
     if (gaps.length < 30) { slowWindows = 0; return; }
     const fps = 1000 / gaps[Math.floor(gaps.length / 2)];

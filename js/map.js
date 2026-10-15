@@ -5,8 +5,8 @@
 
 const map = new maplibregl.Map({
   container: 'map',
-  // Needed so the map canvas can be copied into the print layout.
-  preserveDrawingBuffer: true,
+  // Needed so the map canvas can be copied into the print layout and saved.
+  canvasContextAttributes: { preserveDrawingBuffer: true },
   // Snel quality draws one pixel per CSS pixel on high-resolution screens.
   pixelRatio: isFast() ? 1 : devicePixelRatio,
   style: {
@@ -46,10 +46,13 @@ const map = new maplibregl.Map({
       }
     ]
   },
+  // Tilt far enough in 3D to see the sky above the horizon.
+  maxPitch: 85,
   center: [5.3, 52.15],
   zoom: 7
 });
-map.addControl(new maplibregl.NavigationControl(), 'top-right');
+// Zoom buttons; the round dial below them (camera.js) turns and tilts.
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 map.addControl(new maplibregl.ScaleControl(), 'bottom-right');
 // Replacing the water image quickly cancels the previous load; that's expected.
 map.on('error', e => { if (e.error?.name !== 'AbortError') console.error(e.error || e); });
@@ -69,6 +72,12 @@ const mapReady = new Promise(resolve => map.on('load', () => {
     paint: {
       'circle-radius': ['interpolate', ['exponential', 2], ['zoom'], 15, ['*', ['get', 'kroon'], 0.34], 20, ['*', ['get', 'kroon'], 10.9]],
       'circle-color': '#5fae3e', 'circle-opacity': 0.55, 'circle-stroke-color': '#3d7a28', 'circle-stroke-width': 0.5
+    } });
+  map.addSource('lantaarns', { type: 'geojson', data: emptyFC });
+  map.addLayer({ id: 'lantaarns', type: 'circle', source: 'lantaarns', minzoom: 16,
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 16, 1.5, 19, 3.5],
+      'circle-color': '#3d4045', 'circle-stroke-color': '#f2c14e', 'circle-stroke-width': 1
     } });
   map.addSource('monumenten', { type: 'geojson', data: emptyFC });
   map.addLayer({ id: 'monumenten', type: 'circle', source: 'monumenten',
@@ -121,7 +130,7 @@ let is3D = false;
 // One hover handler for all hoverable layers, so a monument point on top of a
 // building wins instead of two popups fighting.
 const hoverPopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 8 });
-const HOVER_LAYERS = ['monumenten', 'bomen', 'pand-3d', 'panden-fill'];
+const HOVER_LAYERS = ['monumenten', 'bomen', 'lantaarns', 'pand-3d', 'panden-fill'];
 
 function buildingText(p) {
   const parts = [`Bouwjaar ${p.bouwjaar ?? 'onbekend'}`, p.status, formatDoel(p.gebruiksdoel)];
@@ -131,6 +140,7 @@ function buildingText(p) {
 
 function hoverText(f) {
   const p = f.properties;
+  if (f.layer.id === 'lantaarns') return 'Lantaarnpaal';
   if (f.layer.id === 'bomen') return `Boom · ${p.gemeten ? '' : '~'}${nf.format(Math.round(p.hoogte))} m hoog`;
   if (f.layer.id === 'monumenten') {
     const kind = (p.subcategorie || p.hoofdcategorie || '').replace(/\s*\(.*\)$/, '');
@@ -142,7 +152,7 @@ function hoverText(f) {
 map.on('mousemove', e => {
   const layers = HOVER_LAYERS.filter(l => map.getLayer(l) && map.getLayoutProperty(l, 'visibility') !== 'none');
   const hits = layers.length ? map.queryRenderedFeatures(e.point, { layers }) : [];
-  const f = hits.find(h => h.layer.id === 'monumenten') || hits.find(h => h.layer.id === 'bomen') || hits[0];
+  const f = hits.find(h => h.layer.id === 'monumenten') || hits.find(h => h.layer.id === 'lantaarns') || hits.find(h => h.layer.id === 'bomen') || hits[0];
   // In 3D, buildings and trees drawn by three.js are picked with a ray.
   const picked = is3D && typeof pick3D === 'function' ? pick3D(e.point) : null;
   // With the sun-hours map on, every spot also gets its hours of sun.

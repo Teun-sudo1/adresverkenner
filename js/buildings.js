@@ -14,6 +14,7 @@ async function set3D(on) {
   is3D = on;
   $('view3d').setAttribute('aria-pressed', is3D);
   if (!is3D) {
+    stopFlight();
     if (sun.on) toggleSun();
   }
   await mapReady;
@@ -21,12 +22,16 @@ async function set3D(on) {
   updateSunPanel();
   applyBuildingStyle();
   updateLegendHint();
-  map.easeTo(is3D ? { pitch: 60, bearing: -20, zoom: Math.max(map.getZoom(), 17) } : { pitch: 0, bearing: 0 });
+  // Centre on the address: a flight to it may still be under way.
+  const at = current ? { center: [current.lon, current.lat] } : {};
+  map.easeTo(is3D ? { ...at, pitch: 75, bearing: -20, zoom: Math.max(map.getZoom(), 17) } : { pitch: 0, bearing: 0 });
   if (is3D) {
     loadScene();
     loadTreeHeights(current).catch(err => console.error(err));
+    if (current) maybeFlyAround();
   }
   updateTreeLayer();
+  updateLightLayer();
   // The flat water image isn't redrawn while in 3D, so refresh it on the way back.
   if (water && !is3D) drawWaterImage();
   updateWaterVisibility();
@@ -365,6 +370,7 @@ function parseLod22(page) {
 
 // The 3D area around the address: smaller in the Snel quality mode.
 const sceneRadius = () => (isFast() ? 150 : SCENE_RADIUS);
+const outerRadius = () => (isFast() ? 400 : SCENE_RADIUS_OUTER);
 
 // Detailed models are heavy, so only within DETAIL_RADIUS of the address,
 // and not at all in the Snel quality mode.
@@ -385,7 +391,7 @@ function buildThreeScene() {
   if (!current || !THREE) return;
   const dark = isDark();
   const hidden = colorBy ? hiddenClasses[colorBy] : null;
-  const key = [sceneVersion, quality.mode, trees.version, highlightIds.join(','), dark, colorBy, hidden ? [...hidden].join(',') : '', sun.on].join('|');
+  const key = [sceneVersion, quality.mode, trees.version, lights.version, highlightIds.join(','), dark, colorBy, hidden ? [...hidden].join(',') : '', sun.on].join('|');
   if (key === three.key) return;
   three.key = key;
 
@@ -443,6 +449,7 @@ function buildThreeScene() {
 
   pickables.push(...addTrees(scene, frame, sun.on));
   const windows = sun.on ? addWindows(scene, frame) : null;
+  const streetLights = addLights(scene, frame);
 
   const ambient = new THREE.AmbientLight(0xffffff, 1.6);
   const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -466,7 +473,7 @@ function buildThreeScene() {
   moveRain3D(three.scene, scene);
   moveWater3D(three.scene, scene);
   three.scene?.traverse(o => { o.geometry?.dispose(); o.material?.gradientMap?.dispose(); o.material?.dispose(); });
-  Object.assign(three, { scene, origin: frame.origin, s: frame.s, sunLight, ambient, plane, pickables, propsById, windows });
+  Object.assign(three, { scene, origin: frame.origin, s: frame.s, sunLight, ambient, plane, pickables, propsById, windows, lights: streetLights });
   updateSunLight();
 }
 
@@ -489,8 +496,10 @@ function threeLayer() {
       // Shadows only change with the sun or the buildings, not with the camera.
       renderer.shadowMap.autoUpdate = false;
     },
-    render(gl, matrix) {
+    render(gl, args) {
       if (!three.scene) return;
+      // Mercator 0..1 → clip space.
+      const matrix = args.defaultProjectionData.mainMatrix;
       // Local metres → Mercator units (y flips: Mercator y grows southward).
       const local = new THREE.Matrix4().makeTranslation(three.origin.x, three.origin.y, three.origin.z)
         .scale(new THREE.Vector3(three.s, -three.s, three.s));
@@ -674,6 +683,7 @@ function updateSunLight() {
   if (!three.scene) return;
   const pos = sun.on ? currentSun() : null;
   updateWindows(nightFactor());
+  updateLights(nightFactor());
   if (pos) {
     const up = pos.altitude > 0;
     const c = Math.cos(pos.altitude);
@@ -698,7 +708,9 @@ function applyMapLight() {
   const dark = isDark();
   if (pos) {
     const altDeg = pos.altitude * 180 / Math.PI;
-    map.setLight({ anchor: 'map', color: '#ffffff', position: [1.5, pos.azimuth * 180 / Math.PI, Math.min(90, Math.max(0, 90 - altDeg))],
+    // At night a dark blue tint dims MapLibre's blocks along with the three.js ones.
+    map.setLight({ anchor: 'map', color: mixColor('#ffffff', '#5d6688', nightFactor()),
+      position: [1.5, pos.azimuth * 180 / Math.PI, Math.min(90, Math.max(0, 90 - altDeg))],
       intensity: altDeg > 0 ? 0.55 : 0.15 });
   } else {
     map.setLight({ anchor: 'viewport', color: '#ffffff', position: [1.5, 210, 30], intensity: dark ? 0.35 : 0.5 });
@@ -805,8 +817,78 @@ async function applyMapTheme() {
   map.setPaintProperty('brt', 'raster-saturation', dark ? -0.4 : -0.5 * (1 - dim));
   map.setPaintProperty('luchtfoto', 'raster-brightness-max', (dark ? 0.8 : 1) * dim);
   map.setPaintProperty('buurt-line', 'line-color', dark ? '#b39ddb' : '#6a3d9a');
+  applySky();
   applyBuildingStyle();
 }
+
+// ---------- Sky ----------
+
+// Above the horizon (in 3D, tilted) the sky follows the sun when Zon is on:
+// blue by day, orange around sunrise and sunset, dark with stars at night.
+// Without Zon it follows the light or dark theme.
+const SKY_DAY = { sky: '#6fa8dc', horizon: '#dceaf6', fog: '#eef3f8' };
+const SKY_DUSK = { sky: '#4a5f8f', horizon: '#f2a65a', fog: '#e9c3a0' };
+const SKY_NIGHT = { sky: '#060a1a', horizon: '#1b2647', fog: '#121a30' };
+const SKY_DARK = { sky: '#0f1626', horizon: '#2a3550', fog: '#1a2233' };
+const mixSky = (a, b, t) => Object.fromEntries(Object.keys(a).map(k => [k, mixColor(a[k], b[k], t)]));
+
+function skyColors() {
+  const pos = sun.on ? currentSun() : null;
+  if (!pos) return isDark() ? SKY_DARK : SKY_DAY;
+  const alt = pos.altitude * 180 / Math.PI;
+  if (alt >= 10) return SKY_DAY;
+  if (alt >= 0) return mixSky(SKY_DUSK, SKY_DAY, alt / 10);
+  if (alt >= -6) return mixSky(SKY_NIGHT, SKY_DUSK, (alt + 6) / 6);
+  return SKY_NIGHT;
+}
+
+async function applySky() {
+  await mapReady;
+  const c = skyColors();
+  map.setSky({ 'sky-color': c.sky, 'horizon-color': c.horizon, 'fog-color': c.fog,
+    'sky-horizon-blend': 0.6, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.5, 'atmosphere-blend': 0 });
+  drawStars();
+}
+
+// Stars: a fixed random field on a canvas over the map, only above the
+// horizon, turning with the map and fading in as night falls.
+const STARS = Array.from({ length: 220 }, (_, i) => {
+  const r = k => { const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
+  return { x: r(1), y: r(2), size: r(3) < 0.85 ? 0.8 : 1.5, a: 0.4 + 0.6 * r(4) };
+});
+
+function drawStars() {
+  const canvas = $('stars');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w * devicePixelRatio || canvas.height !== h * devicePixelRatio) {
+    canvas.width = w * devicePixelRatio;
+    canvas.height = h * devicePixelRatio;
+  }
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const night = nightFactor();
+  const pitch = map.getPitch();
+  if (!night || pitch < 50) return;
+  // The horizon sits camera-distance / tan(pitch) above the centre (MapLibre's
+  // default field of view is 36.87°, so camera distance is 1.5 × height).
+  const horizon = h / 2 - 1.5 * h / Math.tan(pitch * Math.PI / 180);
+  if (horizon <= 4) return;
+  const shift = map.getBearing() / 360 * w * 3;
+  for (const s of STARS) {
+    const x = ((s.x * w * 3 - shift) % (w * 3) + w * 3) % (w * 3);
+    if (x > w) continue;
+    const y = s.y * horizon;
+    // Fade out towards the horizon glow.
+    const fade = Math.min(1, (horizon - y) / (0.35 * horizon));
+    ctx.globalAlpha = night * s.a * fade;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x, y, s.size, s.size);
+  }
+  ctx.globalAlpha = 1;
+}
+map.on('move', () => { if (sun.on) drawStars(); });
+map.on('resize', drawStars);
 
 $('theme').addEventListener('click', () => setTheme(isDark() ? 'light' : 'dark', true));
 systemDark.addEventListener('change', e => { if (!savedTheme()) setTheme(e.matches ? 'dark' : 'light', false); });
@@ -824,6 +906,47 @@ function heightsFrom3DBag(cityObjects) {
 }
 
 const heightAboveGround = a => a.b3_h_dak_70p - a.b3_h_maaiveld;
+
+// A 3D BAG feature as drawn on the map; BAG adds status and gebruiksdoel where known.
+function sceneFeature(f, bagById) {
+  const p = f.properties;
+  const id = p.identificatie.replace('NL.IMBAG.Pand.', '');
+  const b = bagById?.get(id);
+  const h = p.b3_h_70p - p.b3_h_maaiveld;
+  return {
+    type: 'Feature',
+    geometry: f.geometry,
+    properties: {
+      identificatie: id,
+      bouwjaar: p.oorspronkelijkbouwjaar,
+      status: b?.status ?? p.status,
+      gebruiksdoel: b?.gebruiksdoel ?? null,
+      // Parts without a usable height get a nominal 3 m so they stay visible.
+      hoogte: h > 0 ? h : 3,
+      hoogteBekend: h > 0
+    }
+  };
+}
+
+// The outer ring: plain blocks (LoD 1.2) without gebruiksdoel, shadows or
+// windows, drawn by the same map layer so colours and filters apply. The
+// detailed scene inside stays as it is.
+async function loadOuterScene(ctx, inner) {
+  const r = outerRadius();
+  const bbox = [ctx.x - r, ctx.y - r, ctx.x + r, ctx.y + r].map(Math.round).join(',');
+  try {
+    const data = await getJSON(`${BAG3D_WFS}?service=WFS&version=2.0.0&request=GetFeature&typeNames=BAG3D:lod12` +
+      `&outputFormat=application/json&srsName=EPSG:4326&count=40000&bbox=${bbox},EPSG:28992` +
+      `&propertyName=identificatie,oorspronkelijkbouwjaar,status,b3_h_70p,b3_h_maaiveld,geom`);
+    if (current !== ctx || sceneFeatures !== inner) return;
+    const innerIds = new Set(inner.map(f => f.properties.identificatie));
+    const outer = data.features.map(f => sceneFeature(f)).filter(f => !innerIds.has(f.properties.identificatie));
+    await setLayerData('scene3d', [...inner, ...outer]);
+  } catch (err) {
+    // The detailed scene is already there; the ring is a bonus.
+    console.error(err);
+  }
+}
 
 async function loadScene() {
   if (!current || sceneFor === current) return;
@@ -845,31 +968,14 @@ async function loadScene() {
     ]);
     if (current !== ctx) return;
     const bagById = new Map(bag.map(f => [f.properties.identificatie, f.properties]));
-    const features = data.features.map(f => {
-      const p = f.properties;
-      const id = p.identificatie.replace('NL.IMBAG.Pand.', '');
-      const b = bagById.get(id);
-      const h = p.b3_h_70p - p.b3_h_maaiveld;
-      return {
-        type: 'Feature',
-        geometry: f.geometry,
-        properties: {
-          identificatie: id,
-          bouwjaar: p.oorspronkelijkbouwjaar,
-          status: b?.status ?? p.status,
-          gebruiksdoel: b?.gebruiksdoel ?? null,
-          // Parts without a usable height get a nominal 3 m so they stay visible.
-          hoogte: h > 0 ? h : 3,
-          hoogteBekend: h > 0
-        }
-      };
-    });
+    const features = data.features.map(f => sceneFeature(f, bagById));
     await setLayerData('scene3d', features);
     sceneFeatures = features;
     detailById = detail;
     sceneVersion++;
     if (sun.on) updateSun();
     applyBuildingStyle();
+    loadOuterScene(ctx, features);
   } catch (err) {
     console.error(err);
     sceneFor = null;

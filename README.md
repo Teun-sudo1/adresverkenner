@@ -7,9 +7,9 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 ## Wat kun je ermee
 
 - **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS, klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Elk onderwerp is een uitklapbaar blok met een samenvattende regel. Ook te printen als pdf.
-- **3D:** de omgeving tot 250 m in 3D, met echte dakvormen dichtbij en bomen (altijd zichtbaar, in 2D en 3D).
+- **3D:** de omgeving tot 750 m in 3D (de binnenste 250 m met dakvormen, filters en schaduw), bomen en straatlantaarns, een lucht die meekleurt met de zon, en een rondvlucht van 10 seconden van nacht naar dag (of andersom) bij het eerste bezoek aan een adres in 3D.
 - **Zon en schaduw:** schaduwen op elk tijdstip, een zonuren-kaart per dag, nachtweergave met verlichte ramen, en bomen per seizoen.
-- **Water (knop Overstroming):** hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
+- **Water (knop Overstroming):** de hoogte van het maaiveld ten opzichte van NAP, hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
 - **Regen nu:** de live regenradar van de afgelopen 2 uur, of het nu regent bij het adres (dan valt er ook echt regen in beeld), en de verwachting voor de komende 2 uur per kwartier.
 - **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, layers (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
 - **Vergelijken en lijsten:** twee adressen naast elkaar, of een lijst van maximaal 200 adressen in één keer, te downloaden als CSV voor Excel.
@@ -37,7 +37,7 @@ python3 -m http.server 8000
 | `js/config.js` | Instellingen, bron-URL's, scenario's, de laadindicator (`track`), `fetchWithRetry` en de responscache (`cachedFetch`) |
 | `js/quality.js` | Kwaliteitsstand Mooi/Snel, de automatische overstap bij haperen, instellingenmenu en meldingen |
 | `js/map.js` | MapLibre-kaart, achtergrondlagen, basislagen en de hover-popup |
-| `js/buildings.js` | 3D-weergave, kleuring en filters van panden, three.js-laag (dakvormen LoD 2.2, zon, schaduw, nachtramen), licht/donker-thema |
+| `js/buildings.js` | 3D-weergave, kleuring en filters van panden, three.js-laag (dakvormen LoD 2.2, zon, schaduw, nachtramen), buitenring tot 750 m, lucht en sterren, licht/donker-thema |
 | `js/report.js` | Adres zoeken, het rapport (BAG, perceel, erfgoed, bouwjaarprofiel, klimaat, CBS) |
 | `js/tiff.js` | Minimale GeoTIFF-lezer voor de hoogte- en waterrasters |
 | `js/water.js` | Waterdiepteberekening (draait in een Web Worker) en de besturing van de watersimulatie |
@@ -47,7 +47,9 @@ python3 -m http.server 8000
 | `js/layers.js` | Layers (WMS) met legenda |
 | `js/weather.js` | Knop Regen: live radar (RainViewer), regen nu bij het adres (uit de radarkleur), verwachting komende 2 uur (Open-Meteo) |
 | `js/trees.js` | Bomen uit de BGT, in 2D en 3D, met seizoenen |
+| `js/lights.js` | Straatlantaarns uit de BGT: palen in 3D die 's nachts licht geven |
 | `js/tools.js` | Meten en kaart opslaan als afbeelding |
+| `js/camera.js` | Het draairondje rechtsboven (draaien, kantelen, noorden boven) en de rondvlucht |
 | `js/share.js` | Deelbare links: de URL bewaart adres en weergave, en zet die terug bij openen |
 | `js/compare.js` | Kerngegevens per adres zonder kaart (`keyFigures`), twee adressen vergelijken en de lijst met CSV-export |
 | `js/app.js` | Uitklapbare rapportblokken met samenvattingen, print, telefoonweergave, welkomstscherm en opstart |
@@ -77,7 +79,7 @@ Alle bronnen worden direct vanuit de browser opgevraagd en moeten dus CORS toest
 | RainViewer (API en tegels) | Live regenradar, afgelopen 2 uur in stappen van 10 minuten; regen nu bij het adres | `weather.js` |
 | Open-Meteo (KNMI-model) | Neerslagverwachting komende 2 uur per kwartier | `weather.js` |
 
-Bibliotheken (vastgepinde versies van CDN): MapLibre GL 4.7.1, fflate 0.8.2, d3-array 3.2.4 en d3-contour 4.0.2 (alleen in de worker), three.js 0.160.0 (pas geladen bij 3D).
+Bibliotheken (vastgepinde versies van CDN): MapLibre GL 5.24.0, fflate 0.8.2, d3-array 3.2.4 en d3-contour 4.0.2 (alleen in de worker), three.js 0.160.0 (pas geladen bij 3D).
 
 ## Onderhoud
 

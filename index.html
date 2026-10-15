@@ -12,8 +12,8 @@
       document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     })();
   </script>
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <link rel="stylesheet" href="css/app.css">
 </head>
@@ -255,6 +255,7 @@
 
   <div id="mapwrap">
     <div id="map"></div>
+    <canvas id="stars" aria-hidden="true"></canvas>
     <canvas id="rain-canvas" aria-hidden="true"></canvas>
     <button type="button" id="panel-show" class="mapctl" aria-controls="panel">Adresinfo</button>
     <div id="layers" class="mapctl" role="group" aria-label="Achtergrondkaart">
@@ -332,6 +333,7 @@
         </div>
         <div id="flood" class="mapctl" hidden>
           <div class="panel-head"><span>Overstroming</span><button type="button" class="link" id="flood-close" aria-label="Overstroming sluiten">×</button></div>
+          <div id="flood-nap" hidden></div>
           <label for="flood-scenario" class="sublabel">Scenario</label>
           <select id="flood-scenario">
             <option value="">Uit</option>
@@ -394,8 +396,10 @@
 <script src="js/layers.js"></script>
 <script src="js/weather.js"></script>
 <script src="js/trees.js"></script>
+<script src="js/lights.js"></script>
 <script src="js/tools.js"></script>
 <script src="js/share.js"></script>
+<script src="js/camera.js"></script>
 <script src="js/compare.js"></script>
 <script src="js/app.js"></script>
 </body>
