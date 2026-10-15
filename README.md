@@ -12,7 +12,8 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 - **Water (knop Overstroming):** hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
 - **Regen nu:** de live regenradar van de afgelopen 2 uur, of het nu regent bij het adres (dan valt er ook echt regen in beeld), en de verwachting voor de komende 2 uur per kwartier.
 - **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, layers (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
-- **Overal bruikbaar:** licht en donker thema, telefoonweergave, deelbare links per adres, en een kwaliteitsstand die vanzelf naar Snel schakelt als de kaart hapert.
+- **Vergelijken en lijsten:** twee adressen naast elkaar, of een lijst van maximaal 200 adressen in één keer, te downloaden als CSV voor Excel.
+- **Overal bruikbaar:** licht en donker thema, telefoonweergave, deelbare links die ook de weergave onthouden (kaarthoek, 3D, zon, water, layer, regen), en een kwaliteitsstand die vanzelf naar Snel schakelt als de kaart hapert.
 
 ## Starten
 
@@ -43,11 +44,13 @@ python3 -m http.server 8000
 | `js/rain.js` | Regendruppels en kringen tijdens de bui |
 | `js/solar.js` | Zonnepanelen-schatting per dakvlak |
 | `js/sunhours.js` | Zonuren-kaart (schaduw over het AHN-oppervlaktemodel) |
-| `js/layers.js` | Omgevingslagen (WMS) met legenda |
+| `js/layers.js` | Layers (WMS) met legenda |
 | `js/weather.js` | Knop Regen: live radar (RainViewer), regen nu bij het adres (uit de radarkleur), verwachting komende 2 uur (Open-Meteo) |
 | `js/trees.js` | Bomen uit de BGT, in 2D en 3D, met seizoenen |
 | `js/tools.js` | Meten en kaart opslaan als afbeelding |
-| `js/app.js` | Uitklapbare rapportblokken met samenvattingen, print, telefoonweergave, welkomstscherm, deellinks en opstart |
+| `js/share.js` | Deelbare links: de URL bewaart adres en weergave, en zet die terug bij openen |
+| `js/compare.js` | Kerngegevens per adres zonder kaart (`keyFigures`), twee adressen vergelijken en de lijst met CSV-export |
+| `js/app.js` | Uitklapbare rapportblokken met samenvattingen, print, telefoonweergave, welkomstscherm en opstart |
 | `css/app.css` | Alle opmaak, met kleurvariabelen voor licht en donker |
 
 ### De water-worker
@@ -98,7 +101,7 @@ Snel tekent op schermen met hoge resolutie met één pixel per CSS-pixel, laadt 
 
 ### Testen
 
-`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport en samenvattingen, watersimulatie via de knop Overstroming (loopt het water echt op?), 3D, zon en nacht, bomen en seizoenen, meten, layers, adresinfo verbergen, de knop Regen (radar, regen nu, verwachting) en Snel/Mooi. De test zet de kwaliteit vast op Mooi, omdat onzichtbaar Chrome met de processor tekent en anders vanzelf naar Snel zou schakelen. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
+`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport en samenvattingen, watersimulatie via de knop Overstroming (loopt het water echt op?), 3D, zon en nacht, bomen en seizoenen, meten, layers, adresinfo verbergen, de deelbare link, vergelijken en de lijst met CSV, de knop Regen (radar, regen nu, verwachting) en Snel/Mooi. De test zet de kwaliteit vast op Mooi, omdat onzichtbaar Chrome met de processor tekent en anders vanzelf naar Snel zou schakelen. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
 
 ```sh
 pip install websocket-client
@@ -125,6 +128,5 @@ Safari is niet automatisch getest. Eerder bleek Safari strenger met het uitpakke
 
 ## Ideeën voor later
 
-- Deellink die ook de weergave onthoudt (3D, zon, scenario, laag).
-- Tijdreis met historische luchtfoto's.
-- Twee adressen vergelijken; bulkmodus met CSV-export.
+- Tijdreis met historische luchtfoto's (PDOK, 2016–nu) en topografische kaarten (Kadaster, 1815–nu).
+- Installeerbaar op de telefoon (PWA).

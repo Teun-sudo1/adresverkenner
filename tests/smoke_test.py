@@ -307,6 +307,53 @@ def test_tools(b, r, key):
     r.check(f'{key}: regenradar stopt', b.js("!radar.active && !map.getLayer('radar-0') && rain.frame === 0"))
 
 
+def test_share(b, r, key, base_url):
+    """Sets a view, then opens the page's own URL fresh: the view must come back."""
+    b.js("document.querySelector('#layers [data-layer=luchtfoto]').click()")
+    b.js("(() => { const s = document.getElementById('env-layer'); s.value = 'geluid'; s.dispatchEvent(new Event('change')); })()")
+    b.js("document.getElementById('flood-toggle').click()")
+    b.js("(() => { const s = document.getElementById('flood-scenario'); s.value = 'ov_grote'; s.dispatchEvent(new Event('change')); })()")
+    b.js("document.getElementById('sun-toggle').click()")
+    b.wait_for('is3D && sun.on', 30)
+    b.js("(() => { document.getElementById('sun-date').value = '2026-03-21'; const t = document.getElementById('sun-time'); t.value = 600; t.dispatchEvent(new Event('input')); })()")
+    b.js("map.jumpTo({center: [current.lon + 0.0005, current.lat], zoom: 17.5, pitch: 50, bearing: 30})")
+    b.pump(1.5)
+    search = b.js('location.search')
+    r.check(f'{key}: link onthoudt de weergave', all(t in search for t in ('id=', 'kaart=', 'basis=luchtfoto', 'laag=geluid', '3d=1', 'zon=2026-03-21,600', 'water=ov_grote')), search)
+    b.send('Page.navigate', {'url': base_url + search})
+    b.pump(2)
+    ok = b.wait_for("typeof addressId !== 'undefined' && addressId && is3D && sun.on && !applyingView", 90)
+    state = b.js("""[document.querySelector('#layers [data-layer=luchtfoto]').getAttribute('aria-pressed'), document.getElementById('env-layer').value,
+        waterScenario, !document.getElementById('flood').hidden, document.getElementById('sun-date').value, document.getElementById('sun-time').value,
+        Math.round(map.getPitch()), Math.round(map.getBearing()), +map.getZoom().toFixed(1)].join(' ')""")
+    r.check(f'{key}: gedeelde link zet de weergave terug', ok and state == 'true geluid ov_grote true 2026-03-21 600 50 30 17.5', state)
+    b.js("document.getElementById('view3d').click()")
+    b.js("document.getElementById('flood-close').click()")
+    b.js("document.querySelector('#layers [data-layer=brt]').click()")
+    b.js("(() => { const s = document.getElementById('env-layer'); s.value = ''; s.dispatchEvent(new Event('change')); })()")
+    b.pump(1)
+
+
+def test_compare_bulk(b, r, key):
+    b.js("document.getElementById('open-compare').click()")
+    b.js("document.getElementById('cmp-b').value = 'Coolsingel 40 Rotterdam'")
+    b.js("document.getElementById('compare-form').requestSubmit()")
+    ok = b.wait_for("!document.getElementById('compare-result').hidden", 90)
+    rows = b.js("document.querySelectorAll('#compare-table tbody tr').length")
+    year = b.js("[...document.querySelectorAll('#compare-table tbody tr')].find(r => r.cells[0].textContent === 'Bouwjaar')?.cells[2].textContent")
+    r.check(f'{key}: twee adressen vergelijken', ok and rows > 15 and year == '1920', f'{rows} kenmerken, bouwjaar B {year}')
+    b.js("document.querySelector('#compare .dialog-close').click()")
+    b.js("document.getElementById('open-bulk').click()")
+    b.js("(() => { const t = document.getElementById('bulk-input'); t.value = 'Damrak 1 Amsterdam\\nxyzxyz nergens 99999\\nCoolsingel 40 Rotterdam'; t.dispatchEvent(new Event('input')); })()")
+    b.js("document.getElementById('bulk-run').click()")
+    ok = b.wait_for("!document.getElementById('bulk-download').hidden", 120)
+    csv = b.js("bulkCsv()") or ''
+    lines = csv.strip().split('\r\n')
+    r.check(f'{key}: lijst met adressen als CSV', ok and len(lines) == 4 and ';nee;' in lines[2] and 'Coolsingel 40, 3011AD Rotterdam' in lines[3],
+            b.js("document.getElementById('bulk-status').textContent"))
+    b.js("document.querySelector('#bulk .dialog-close').click()")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--url', default=(ROOT / 'index.html').as_uri(), help='pagina om te testen (standaard het lokale index.html)')
@@ -330,6 +377,9 @@ def main():
             if key == 'prinsengracht':
                 test_tools(b, r, key)
             test_3d(b, r, key, with_night=(key == 'prinsengracht'))
+            if key == 'damrak':
+                test_share(b, r, key, args.url)
+                test_compare_bulk(b, r, key)
     except (websocket.WebSocketConnectionClosedException, ConnectionError) as err:
         # Headless Chrome renders on the CPU and can occasionally crash under load.
         r.check('testbrowser bleef draaien', False, f'{type(err).__name__}; draai de test opnieuw')

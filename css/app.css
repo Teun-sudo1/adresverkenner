@@ -236,6 +236,26 @@ tr.current td { background: var(--current); font-weight: 600; }
 .tile p { margin: 0; font-size: 13px; color: var(--muted); }
 .welcome-card .disclaimer { font-size: 12px; color: var(--muted); }
 #welcome-close { position: absolute; top: 12px; right: 12px; padding: 2px 10px; font-size: 22px; line-height: 1; background: none; color: var(--muted); }
+.dialog-card { max-width: 760px; }
+.dialog-close { position: absolute; top: 12px; right: 12px; padding: 2px 10px; font-size: 22px; line-height: 1; background: none; color: var(--muted); }
+.search-extras { margin: 4px 0 0; font-size: 13px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin: 8px 0; }
+.pair label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
+.pair input, #bulk-input { font: inherit; font-weight: 400; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--bg); color: var(--text); }
+#bulk-input { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; resize: vertical; font-size: 13px; }
+.bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+#bulk-progress { width: 100%; margin-top: 10px; accent-color: var(--accent); }
+.table-wrap { overflow-x: auto; margin-top: 8px; }
+table.figures { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.figures th, table.figures td { padding: 5px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+table.figures thead th { position: sticky; top: 0; background: var(--bg); }
+table.figures td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.figures tbody th { font-weight: 400; color: var(--muted); }
+#compare-table td { font-weight: 600; }
+#compare-table tr.same td { font-weight: 400; color: var(--muted); }
+#bulk-table th, #bulk-table td { white-space: nowrap; }
+#bulk-table tr.missing td { color: var(--error); }
+@media (max-width: 700px) { .pair { grid-template-columns: 1fr; } }
 button.link { padding: 0; background: none; color: var(--accent); font-size: inherit; }
 button.link:hover { text-decoration: underline; }
 @media (max-width: 560px) { .tiles { grid-template-columns: 1fr; } }
@@ -293,7 +313,7 @@ body.panel-hidden #panel-show { display: block; }
   html, body { height: auto; }
   #app { display: block; }
   #panel { width: auto; max-height: none; overflow: visible; padding: 0; border: 0; }
-  #mapwrap, #search, .hint, #status, #recent, #print, #theme, #help, #welcome, #r-bagviewer { display: none !important; }
+  #mapwrap, #search, .hint, #status, #recent, #print, #theme, #help, #welcome, #r-bagviewer, .search-extras, #compare, #bulk { display: none !important; }
   #print-map { display: block; width: 100%; max-height: 90mm; object-fit: cover; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; }
   #loadbar, #settings-btn, #settings, .section-tools, #toast, #solar-show, .chart-tip, #panel details:not(.section) { display: none !important; }
   details.section > summary::before { content: none; }

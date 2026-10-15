@@ -180,10 +180,11 @@ window.addEventListener('popstate', e => {
   if (e.state?.id) loadAddress(e.state.id, { pushHistory: false });
 });
 
-const initialId = new URLSearchParams(location.search).get('id');
+const initialParams = new URLSearchParams(location.search);
+const initialId = initialParams.get('id');
 if (initialId) {
   try { history.replaceState({ id: initialId }, '', location.href); } catch {}
-  loadAddress(initialId, { pushHistory: false });
+  openSharedLink(initialParams);
 }
 renderRecent();
 

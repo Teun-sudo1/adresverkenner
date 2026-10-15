@@ -318,7 +318,7 @@ $('search').addEventListener('submit', async e => {
 
 let loadId = 0;
 
-async function loadAddress(lsId, { pushHistory = true } = {}) {
+async function loadAddress(lsId, { pushHistory = true, camera = null } = {}) {
   const mine = ++loadId;
   const stale = () => mine !== loadId;
   closeWelcome();
@@ -334,12 +334,15 @@ async function loadAddress(lsId, { pushHistory = true } = {}) {
 
     // Some browsers refuse pushState on file:// pages; the report still works without it.
     if (pushHistory) try { history.pushState({ id: lsId }, '', `?id=${encodeURIComponent(lsId)}`); } catch {}
+    addressId = lsId;
     document.title = `${doc.weergavenaam} – Adresverkenner`;
     $('q').value = doc.weergavenaam;
     addRecent(lsId, doc.weergavenaam);
 
     marker.setLngLat([lon, lat]).addTo(map);
-    map.flyTo({ center: [lon, lat], zoom: 18 });
+    // A shared link brings its own camera.
+    if (camera) map.jumpTo(camera);
+    else map.flyTo({ center: [lon, lat], zoom: 18 });
     resetResult();
     $('result').hidden = false;
     $('recent').hidden = true;
@@ -366,6 +369,7 @@ async function loadAddress(lsId, { pushHistory = true } = {}) {
     sceneVersion++;
     highlight3D([]);
     if (is3D) loadScene();
+    if (sun.on) updateSun();
     if (waterScenario) loadWater();
     const parcels = loadParcels(doc.gekoppeld_perceel || [], [lon, lat], stale);
     loadBuurt(lon, lat, stale);
@@ -739,7 +743,8 @@ const CBS_GROUPS = [
 // CBS uses large negative codes (e.g. -99997) for secret or missing values.
 const validStat = v => typeof v === 'number' && v > -99990;
 
-async function loadBuurt(lon, lat, stale) {
+// The neighbourhood of a point in each CBS year that has it, newest first.
+async function fetchBuurtYears(lon, lat) {
   // A tiny bbox around the point finds the neighbourhood regardless of
   // code changes between CBS years.
   const d = 1e-6;
@@ -748,8 +753,18 @@ async function loadBuurt(lon, lat, stale) {
     getJSON(`https://api.pdok.nl/cbs/wijken-en-buurten-${y}/ogc/v1/collections/buurten/items?f=json&limit=1&bbox=${bbox}`)
       .then(r => ({ year: y, feature: r.features[0] }))
       .catch(() => ({ year: y, feature: null }))));
+  return results.filter(r => r.feature);
+}
+
+// The newest valid value of a CBS statistic, with its year.
+function buurtStat(years, key) {
+  const hit = years.find(y => validStat(y.feature.properties[key]));
+  return hit ? { value: hit.feature.properties[key], year: hit.year } : null;
+}
+
+async function loadBuurt(lon, lat, stale) {
+  const years = await fetchBuurtYears(lon, lat);
   if (stale()) return;
-  const years = results.filter(r => r.feature);
   if (!years.length) return;
 
   setLayerData('buurt', [years[0].feature]);
@@ -758,11 +773,11 @@ async function loadBuurt(lon, lat, stale) {
   for (const [title, stats] of CBS_GROUPS) {
     const dl = document.createElement('dl');
     for (const [key, label, fmt] of stats) {
-      const hit = years.find(y => validStat(y.feature.properties[key]));
+      const hit = buurtStat(years, key);
       const dt = document.createElement('dt');
       dt.textContent = label;
       const dd = document.createElement('dd');
-      dd.textContent = hit ? fmt(hit.feature.properties[key]) : '–';
+      dd.textContent = hit ? fmt(hit.value) : '–';
       if (hit) {
         const yr = document.createElement('span');
         yr.className = 'yr';

@@ -55,6 +55,46 @@
     <button id="welcome-start" type="button">Naar de kaart</button>
   </div>
 </div>
+<div id="compare" class="overlay" hidden>
+  <div class="welcome-card dialog-card" role="dialog" aria-modal="true" aria-labelledby="compare-title">
+    <button type="button" class="dialog-close" aria-label="Sluiten">×</button>
+    <h2 id="compare-title">Twee adressen vergelijken</h2>
+    <form id="compare-form" class="pair" autocomplete="off">
+      <label>Adres A <input id="cmp-a" type="search" list="cmp-a-list" required placeholder="Bijv. Damrak 1 Amsterdam"></label>
+      <label>Adres B <input id="cmp-b" type="search" list="cmp-b-list" required placeholder="Bijv. Coolsingel 40 Rotterdam"></label>
+      <datalist id="cmp-a-list"></datalist><datalist id="cmp-b-list"></datalist>
+      <button type="submit">Vergelijk</button>
+    </form>
+    <p id="compare-status" class="hint" role="status"></p>
+    <div id="compare-result" hidden>
+      <div class="table-wrap">
+        <table id="compare-table" class="figures">
+          <thead><tr><th scope="col">Kenmerk</th><th scope="col"></th><th scope="col"></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint">Verschillen staan vet; gelijke waarden zijn grijs. Buurtcijfers zijn van het CBS, milieuwaarden gelden voor het adrespunt.</p>
+    </div>
+  </div>
+</div>
+<div id="bulk" class="overlay" hidden>
+  <div class="welcome-card dialog-card" role="dialog" aria-modal="true" aria-labelledby="bulk-title">
+    <button type="button" class="dialog-close" aria-label="Sluiten">×</button>
+    <h2 id="bulk-title">Lijst met adressen ophalen</h2>
+    <p class="lead">Plak adressen, één per regel (maximaal 200). Per adres komen de kerngegevens in een tabel: gebouw, zonnepanelen, monument, water, milieu en buurt. Download het geheel als CSV voor Excel.</p>
+    <label for="bulk-input" class="sublabel">Adressen</label>
+    <textarea id="bulk-input" rows="7" spellcheck="false" placeholder="Damrak 1 Amsterdam&#10;Coolsingel 40 Rotterdam&#10;3511 LJ 1"></textarea>
+    <div class="bulk-bar">
+      <button type="button" id="bulk-run">Ophalen</button>
+      <button type="button" id="bulk-stop" class="secondary" hidden>Stoppen</button>
+      <button type="button" id="bulk-download" class="secondary" hidden>Download CSV</button>
+      <span id="bulk-count" class="hint"></span>
+    </div>
+    <progress id="bulk-progress" hidden></progress>
+    <p id="bulk-status" class="hint" role="status"></p>
+    <div class="table-wrap"><table id="bulk-table" class="figures" hidden><thead></thead><tbody></tbody></table></div>
+  </div>
+</div>
 <div id="loadbar" hidden role="progressbar" aria-label="Gegevens laden"></div>
 <div id="toast" class="toast" role="status" hidden><span id="toast-text"></span><button type="button" class="link" id="toast-action"></button><button type="button" class="link" id="toast-close" aria-label="Melding sluiten">×</button></div>
 <div id="app">
@@ -84,6 +124,7 @@
       <ul id="suggestions" role="listbox" hidden></ul>
     </form>
     <p class="hint">Of klik op de kaart om het dichtstbijzijnde adres op te halen.</p>
+    <p class="search-extras"><button type="button" class="link" id="open-compare">Twee adressen vergelijken</button> · <button type="button" class="link" id="open-bulk">Lijst met adressen ophalen</button></p>
     <div id="status"></div>
 
     <div id="recent" hidden>
@@ -260,6 +301,7 @@
             <button type="button" class="link" id="measure-clear">Meting wissen</button>
           </div>
           <button type="button" id="save-image" class="full">Kaart opslaan als afbeelding</button>
+          <button type="button" id="share-link" class="full" title="De link onthoudt het adres en de weergave: kaarthoek, 3D, zon, water, layer en regen">Link naar deze weergave delen</button>
         </div>
         <div id="envlayer" class="mapctl">
           <label for="env-layer">Layers</label>
@@ -353,6 +395,8 @@
 <script src="js/weather.js"></script>
 <script src="js/trees.js"></script>
 <script src="js/tools.js"></script>
+<script src="js/share.js"></script>
+<script src="js/compare.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
