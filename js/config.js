@@ -106,7 +106,12 @@ async function cachedFetch(url, init = {}) {
       const cache = await openCache();
       const hit = await cache?.match(url).catch(() => null);
       if (hit && Date.now() - Number(hit.headers.get('x-cached-at')) < CACHE_TTL) return hit;
-      const res = await fetch(url, init);
+      let res = await fetch(url, init);
+      // Public data services sometimes answer a one-off server error; try once more.
+      if (res.status >= 500) {
+        await new Promise(r => setTimeout(r, 800));
+        res = await fetch(url, init);
+      }
       if (res.ok && cache) {
         const headers = new Headers(res.headers);
         headers.set('x-cached-at', String(Date.now()));

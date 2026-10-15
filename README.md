@@ -2,11 +2,13 @@
 
 Een webapp die alles over een Nederlands adres op één kaart zet: het gebouw (BAG, 3D BAG), de grond (BRK), de buurt (CBS), erfgoed (RCE), klimaat- en milieurisico's, zonnepotentie en schaduw, en een watersimulatie voor hevige regen en overstromingen. Alles draait in de browser op open data; er is geen eigen server of API-sleutel.
 
+**Live:** https://teun-sudo1.github.io/adresverkenner/ · **Code:** https://github.com/Teun-sudo1/adresverkenner
+
 ## Starten
 
 Open `index.html` in een browser. Dat werkt ook direct vanaf schijf (`file://`). Houd de hele map bij elkaar: de pagina laadt `css/` en `js/` mee.
 
-Voor deellinks die anderen kunnen openen, zet je de map op een statische host (bijvoorbeeld GitHub Pages of Netlify). Er is geen build-stap.
+De live versie draait op GitHub Pages: elke push naar `main` staat na een minuut of twee online. Er is geen build-stap.
 
 Lokaal serveren kan ook:
 
@@ -74,11 +76,19 @@ De Klimaateffectatlas en het RIVM zetten een datum in hun laagnamen, zoals `_202
 
 ### Cache
 
-Antwoorden van GET-verzoeken worden een dag bewaard in de Cache Storage van de browser (`cachedFetch` in `js/config.js`). Verandert de vorm van de opgehaalde data, verhoog dan `CACHE_NAME` (bijvoorbeeld naar `adresrapport-v2`), zodat oude antwoorden niet meer gebruikt worden. Berekend water wordt per adres en scenario in het geheugen bewaard zolang de pagina open is.
+Antwoorden van GET-verzoeken worden een dag bewaard (bij een serverfout wordt eenmaal opnieuw geprobeerd) in de Cache Storage van de browser (`cachedFetch` in `js/config.js`). Verandert de vorm van de opgehaalde data, verhoog dan `CACHE_NAME` (bijvoorbeeld naar `adresrapport-v2`), zodat oude antwoorden niet meer gebruikt worden. Berekend water wordt per adres en scenario in het geheugen bewaard zolang de pagina open is.
 
 ### Testen
 
-Er is geen automatische testsuite. Bij het bouwen is getest door Chrome headless aan te sturen via het DevTools-protocol: adressen laden, knoppen klikken, screenshots maken en de console op fouten controleren. Goede testadressen:
+`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport, watersimulatie (loopt het water echt op?), 3D, cartoon, zon en nacht, bomen, meten en omgevingslagen. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
+
+```sh
+pip install websocket-client
+python3 tests/smoke_test.py                                               # lokale map
+python3 tests/smoke_test.py --url https://teun-sudo1.github.io/adresverkenner/   # live site
+```
+
+Een run duurt een paar minuten, omdat alle data live wordt opgehaald. De testadressen:
 
 - Prinsengracht 263, Amsterdam: rijksmonument, dakvormen, bomen, beschermd stadsgezicht.
 - Van Heukelomstraat 201, Rotterdam: diep in een polder, veel water in de scenario's.
