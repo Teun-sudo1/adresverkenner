@@ -415,8 +415,13 @@ function parseLod22(page) {
   return out;
 }
 
-// Detailed models are heavy, so only within DETAIL_RADIUS of the address.
+// The 3D area around the address: smaller in the Snel quality mode.
+const sceneRadius = () => (isFast() ? 150 : SCENE_RADIUS);
+
+// Detailed models are heavy, so only within DETAIL_RADIUS of the address,
+// and not at all in the Snel quality mode.
 async function loadDetail(ctx) {
+  if (isFast()) return new Map();
   const r = DETAIL_RADIUS;
   let url = `${BAG3D}?limit=100&bbox=${[ctx.x - r, ctx.y - r, ctx.x + r, ctx.y + r].map(Math.round).join(',')}`;
   const byId = new Map();
@@ -432,7 +437,7 @@ function buildThreeScene() {
   if (!current || !THREE) return;
   const dark = isDark();
   const hidden = colorBy ? hiddenClasses[colorBy] : null;
-  const key = [sceneVersion, trees.version, trees.on, highlightIds.join(','), dark, cartoon, colorBy, hidden ? [...hidden].join(',') : '', sun.on].join('|');
+  const key = [sceneVersion, quality.mode, trees.version, trees.on, highlightIds.join(','), dark, cartoon, colorBy, hidden ? [...hidden].join(',') : '', sun.on].join('|');
   if (key === three.key) return;
   three.key = key;
 
@@ -514,9 +519,10 @@ function buildThreeScene() {
 
   const ambient = new THREE.AmbientLight(0xffffff, 1.6);
   const sunLight = new THREE.DirectionalLight(0xffffff, 2.2);
-  const extent = SCENE_RADIUS + 80;
+  const extent = sceneRadius() + 80;
   Object.assign(sunLight.shadow.camera, { left: -extent, right: extent, top: extent, bottom: -extent, near: 1, far: 3000 });
-  sunLight.shadow.mapSize.set(4096, 4096);
+  const shadowRes = isFast() ? 2048 : 4096;
+  sunLight.shadow.mapSize.set(shadowRes, shadowRes);
   sunLight.shadow.bias = -0.0005;
   sunLight.shadow.normalBias = 0.3;
   scene.add(ambient, sunLight, sunLight.target);
@@ -624,7 +630,8 @@ function pick3D(point) {
 
 // Windows on the walls of the buildings near the address: one per 3 m of wall
 // per 3 m storey. After sunset more and more of them light up.
-const NIGHT_RADIUS = 150, MAX_WINDOWS = 40000;
+const NIGHT_RADIUS = 150;
+const maxWindows = () => (isFast() ? 12000 : 40000);
 const WINDOW_LIT = '#ffd27a', WINDOW_DARK = '#1e2533';
 
 function addWindows(scene, frame) {
@@ -638,7 +645,7 @@ function addWindows(scene, frame) {
     const r = ring.map(frame.fromLngLat);
     if (Math.hypot(r[0][0], r[0][1]) > NIGHT_RADIUS) continue;
     if (signedArea(r) < 0) r.reverse();
-    for (let i = 0; i + 1 < r.length && placements.length < MAX_WINDOWS; i++) {
+    for (let i = 0; i + 1 < r.length && placements.length < maxWindows(); i++) {
       const [ax, ay] = r[i], [bx, by] = r[i + 1];
       const len = Math.hypot(bx - ax, by - ay);
       const n = Math.floor(len / 3);
@@ -895,7 +902,7 @@ async function loadScene() {
   const ctx = current;
   sceneFor = ctx;
   try {
-    const r = SCENE_RADIUS;
+    const r = sceneRadius();
     const bbox = [ctx.x - r, ctx.y - r, ctx.x + r, ctx.y + r].map(Math.round).join(',');
     const dLon = r / (111320 * Math.cos(ctx.lat * Math.PI / 180)), dLat = r / 110574;
     // 3D BAG has heights but no gebruiksdoel, so join that (and the current

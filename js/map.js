@@ -7,6 +7,8 @@ const map = new maplibregl.Map({
   container: 'map',
   // Needed so the map canvas can be copied into the print layout.
   preserveDrawingBuffer: true,
+  // Snel quality draws one pixel per CSS pixel on high-resolution screens.
+  pixelRatio: isFast() ? 1 : devicePixelRatio,
   style: {
     version: 8,
     sources: {

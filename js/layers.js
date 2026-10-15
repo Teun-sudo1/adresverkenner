@@ -11,9 +11,7 @@ const ENV_LAYERS = {
   bodemdaling: { label: 'Bodemdaling', base: KEA_WMS, layer: 'nl_bodemdaling_totaal_v20260623', source: 'Klimaateffectatlas' },
   paalrot: { label: 'Risico paalrot (per buurt)', base: KEA_WMS, layer: 'risicopaalrot_huidig', source: 'Klimaateffectatlas' },
   boomhoogte: { label: 'Boomhoogte (2022)', base: ALO_WMS, layer: 'rivm_20240101_boomhoogte_2022', source: 'RIVM Atlas Leefomgeving' },
-  groen: { label: 'Groenkaart (2022)', base: ALO_WMS, layer: 'rivm_20240101_groenkaart_2022', source: 'RIVM Atlas Leefomgeving' },
-  // Not a WMS: the live radar has its own frames and controls (radar.js).
-  radar: { label: 'Regenradar (live, afgelopen 2 uur)', radar: true, source: 'RainViewer' }
+  groen: { label: 'Groenkaart (2022)', base: ALO_WMS, layer: 'rivm_20240101_groenkaart_2022', source: 'RIVM Atlas Leefomgeving' }
 };
 
 $('env-layer').append(...Object.entries(ENV_LAYERS).map(([key, l]) => {
@@ -29,12 +27,8 @@ async function showEnvLayer(key) {
   if (map.getSource('env-layer')) map.removeSource('env-layer');
   const l = ENV_LAYERS[key];
   $('env-legend').hidden = !l;
-  if (l?.radar) startRadar();
-  else if (radar.active) stopRadar();
-  $('env-legend-img').hidden = !l || !!l.radar;
   if (!l) return;
   $('env-source').textContent = `Bron: ${l.source}`;
-  if (l.radar) return;
   map.addSource('env-layer', {
     type: 'raster', tileSize: 256, attribution: l.source,
     tiles: [`${l.base}?service=WMS&version=1.3.0&request=GetMap&layers=${l.layer}&styles=&format=image/png&transparent=true` +

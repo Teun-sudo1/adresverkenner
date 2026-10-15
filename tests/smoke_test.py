@@ -168,6 +168,8 @@ def open_address(b, base_url, address_id):
     # Let the slower sections (heritage, years, CBS, environment) arrive too.
     b.wait_for('pendingLoads === 0', 90)
     b.js("setTheme('light', true); localStorage.setItem('adresrapport.welcomeSeen', '1')")
+    # Headless Chrome renders on the CPU and would trip the automatic switch to Snel.
+    b.js("quality.setting = 'mooi'; localStorage.setItem('adresrapport.quality', 'mooi'); setQualityMode('mooi')")
     return ready
 
 
@@ -182,6 +184,14 @@ def test_report(b, r, key):
         r.check(f'{key}: {section} zichtbaar', not b.js(f"document.getElementById('{section}').hidden"))
     r.check(f'{key}: bomen geteld', b.js("document.getElementById('r-bomen').textContent") not in ('–', 'niet beschikbaar'),
             b.js("document.getElementById('r-bomen').textContent"))
+    # Sidebar: sections folded with a one-line summary each.
+    b.pump(1)
+    sums = b.js("[...document.querySelectorAll('details.section:not([hidden])')].map(d => d.dataset.key + ': ' + d.querySelector('.sum').textContent)")
+    empty = [s for s in sums if s.endswith(': ')]
+    r.check(f'{key}: samenvattingen in de zijbalk', sums and not empty, '; '.join(sums)[:220] if not empty else f'leeg: {empty}')
+    b.js("document.getElementById('toggle-sections').click()")
+    r.check(f'{key}: alles openklappen', b.js("[...document.querySelectorAll('details.section')].every(d => d.open)"))
+    b.js("document.getElementById('toggle-sections').click()")
 
 
 def test_water_rises(b, r, key, scenario):
@@ -215,6 +225,14 @@ def test_3d(b, r, key, with_night=True):
         mid = b.js('water3d.group ? water3d.group.scale.z * 100 + Math.round(water3d.group.position.z * 100) : null')
         b.pump(9)
         r.check(f'{key}: 3D-water speelt af', mid is not None and b.js("document.getElementById('flood-level').value") == '100', f'tussenstand {mid}')
+    if with_night:
+        # Snel: smaller 3D area without detailed roofs; then back to Mooi.
+        full = b.js('sceneFeatures.length')
+        b.js("document.querySelector('input[name=quality][value=snel]').click()")
+        ok = b.wait_for('quality.mode === "snel" && sceneFeatures.length > 0 && sceneFeatures.length < ' + str(full) + ' && detailById.size === 0', 90)
+        r.check(f'{key}: kwaliteit Snel', ok, f"{full} → {b.js('sceneFeatures.length')} delen, pixelratio {b.js('map.getPixelRatio()')}")
+        b.js("document.querySelector('input[name=quality][value=mooi]').click()")
+        r.check(f'{key}: terug naar Mooi', b.wait_for('quality.mode === "mooi" && detailById.size > 0', 90))
     b.js("document.getElementById('cartoon').click()")
     r.check(f'{key}: cartoon', b.wait_for("cartoon && !!map.getLayer('three-3d')", 30))
     b.pump(3)
@@ -252,18 +270,25 @@ def test_tools(b, r, key):
     b.js("document.getElementById('measure-clear').click()")
     b.js("(() => { const s = document.getElementById('env-layer'); s.value = 'geluid'; s.dispatchEvent(new Event('change')); })()")
     r.check(f'{key}: omgevingslaag met legenda', b.wait_for("!!map.getLayer('env-layer') && document.getElementById('env-legend-img').naturalWidth > 0", 30))
-    b.js("(() => { const s = document.getElementById('env-layer'); s.value = 'radar'; s.dispatchEvent(new Event('change')); })()")
-    ok = b.wait_for("radar.frames.length > 0 && !!map.getLayer('radar-0')", 30)
+    b.js("document.getElementById('rain-live-toggle').click()")
+    ok = b.wait_for("radar.frames.length > 0 && !!map.getLayer('radar-0') && document.getElementById('rain-now').textContent !== ''", 40)
     first = b.js("document.getElementById('radar-time').textContent")
     b.pump(2.5)
     r.check(f'{key}: regenradar laadt en speelt af', ok and b.js("document.getElementById('radar-time').textContent") != first,
             f"{b.js('radar.frames.length')} beelden, {first}")
+    r.check(f'{key}: regen nu bij het adres', b.js("document.getElementById('rain-now').textContent"), b.js("document.getElementById('rain-now').textContent"))
+    r.check(f'{key}: verwachting komende 2 uur', b.wait_for("document.getElementById('forecast-headline').textContent !== ''", 30),
+            b.js("document.getElementById('forecast-headline').textContent"))
+    # Real rain in view, simulated: pretend the radar shows light rain here.
+    b.js("liveRain.level = 2; updateRain()")
+    b.pump(1.5)
+    r.check(f'{key}: echte regen valt in beeld', b.js("isRaining() && rain.frame !== 0 && rain.streaks.length > 0"), f"{b.js('rain.streaks.length')} strepen")
     b.js("map.jumpTo({zoom: 7.5})")
     b.pump(4)
     b.screenshot(f'{key}-radar')
-    b.js("(() => { const s = document.getElementById('env-layer'); s.value = ''; s.dispatchEvent(new Event('change')); })()")
+    b.js("document.getElementById('rain-live-toggle').click()")
     b.pump(1)
-    r.check(f'{key}: regenradar stopt', b.js("!radar.active && !map.getLayer('radar-0')"))
+    r.check(f'{key}: regenradar stopt', b.js("!radar.active && !map.getLayer('radar-0') && rain.frame === 0"))
 
 
 def main():
@@ -289,6 +314,9 @@ def main():
             if key == 'prinsengracht':
                 test_tools(b, r, key)
             test_3d(b, r, key, with_night=(key == 'prinsengracht'))
+    except (websocket.WebSocketConnectionClosedException, ConnectionError) as err:
+        # Headless Chrome renders on the CPU and can occasionally crash under load.
+        r.check('testbrowser bleef draaien', False, f'{type(err).__name__}; draai de test opnieuw')
     finally:
         b.close()
 

@@ -6,12 +6,13 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 
 ## Wat kun je ermee
 
-- **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS, klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Ook te printen als pdf.
+- **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS, klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Elk onderwerp is een uitklapbaar blok met een samenvattende regel. Ook te printen als pdf.
 - **3D:** de omgeving tot 250 m in 3D, met echte dakvormen dichtbij, bomen, en een speelse cartoonstijl.
 - **Zon en schaduw:** schaduwen op elk tijdstip, een zonuren-kaart per dag, nachtweergave met verlichte ramen, en bomen per seizoen.
-- **Water:** hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels, plus de actuele regenradar.
+- **Water:** hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
+- **Regen nu:** de live regenradar van de afgelopen 2 uur, of het nu regent bij het adres (dan valt er ook echt regen in beeld), en de verwachting voor de komende 2 uur per kwartier.
 - **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, omgevingslagen (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
-- **Overal bruikbaar:** licht en donker thema, telefoonweergave, en deelbare links per adres.
+- **Overal bruikbaar:** licht en donker thema, telefoonweergave, deelbare links per adres, en een kwaliteitsstand die vanzelf naar Snel schakelt als de kaart hapert.
 
 ## Starten
 
@@ -32,7 +33,8 @@ python3 -m http.server 8000
 
 | Bestand | Inhoud |
 |---|---|
-| `js/config.js` | Instellingen, bron-URL's, scenario's, de laadindicator (`track`) en de responscache (`cachedFetch`) |
+| `js/config.js` | Instellingen, bron-URL's, scenario's, de laadindicator (`track`), `fetchWithRetry` en de responscache (`cachedFetch`) |
+| `js/quality.js` | Kwaliteitsstand Mooi/Snel, de automatische overstap bij haperen, instellingenmenu en meldingen |
 | `js/map.js` | MapLibre-kaart, achtergrondlagen, basislagen en de hover-popup |
 | `js/buildings.js` | 3D-weergave, kleuring en filters van panden, three.js-laag (cartoon, dakvormen LoD 2.2, zon, schaduw, nachtramen), licht/donker-thema |
 | `js/report.js` | Adres zoeken, het rapport (BAG, perceel, erfgoed, bouwjaarprofiel, klimaat, CBS) |
@@ -42,10 +44,10 @@ python3 -m http.server 8000
 | `js/solar.js` | Zonnepanelen-schatting per dakvlak |
 | `js/sunhours.js` | Zonuren-kaart (schaduw over het AHN-oppervlaktemodel) |
 | `js/layers.js` | Omgevingslagen (WMS) met legenda |
-| `js/radar.js` | Live regenradar (RainViewer), afgelopen 2 uur als lus |
+| `js/weather.js` | Knop Regen: live radar (RainViewer), regen nu bij het adres (uit de radarkleur), verwachting komende 2 uur (Open-Meteo) |
 | `js/trees.js` | Bomen uit de BGT, in 2D en 3D, met seizoenen |
 | `js/tools.js` | Meten en kaart opslaan als afbeelding |
-| `js/app.js` | Print, telefoonweergave, welkomstscherm, deellinks en opstart |
+| `js/app.js` | Uitklapbare rapportblokken met samenvattingen, print, telefoonweergave, welkomstscherm, deellinks en opstart |
 | `css/app.css` | Alle opmaak, met kleurvariabelen voor licht en donker |
 
 ### De water-worker
@@ -69,7 +71,8 @@ Alle bronnen worden direct vanuit de browser opgevraagd en moeten dus CORS toest
 | RCE (openbaar WFS en geovoorziening) | Rijksmonumenten en beschermde stads- en dorpsgezichten | `report.js` |
 | Klimaateffectatlas (WMS, WCS, opslag) | Overstromingsdieptes, overstromingskans, bodemdaling, paalrot, hitte, de hevige-regen-COG | `config.js`, `report.js`, `layers.js` |
 | RIVM Atlas Leefomgeving (WMS) | Geluid, NO₂, fijnstof, boomhoogte, groen | `report.js`, `layers.js` |
-| RainViewer (API en tegels) | Live regenradar, afgelopen 2 uur in stappen van 10 minuten | `radar.js` |
+| RainViewer (API en tegels) | Live regenradar, afgelopen 2 uur in stappen van 10 minuten; regen nu bij het adres | `weather.js` |
+| Open-Meteo (KNMI-model) | Neerslagverwachting komende 2 uur per kwartier | `weather.js` |
 
 Bibliotheken (vastgepinde versies van CDN): MapLibre GL 4.7.1, fflate 0.8.2, d3-array 3.2.4 en d3-contour 4.0.2 (alleen in de worker), three.js 0.160.0 (pas geladen bij 3D).
 
@@ -89,9 +92,13 @@ De Klimaateffectatlas en het RIVM zetten een datum in hun laagnamen, zoals `_202
 
 Antwoorden van GET-verzoeken worden een dag bewaard in de Cache Storage van de browser (`cachedFetch` in `js/config.js`). Bij een netwerkhapering of serverfout probeert `fetchWithRetry` het eenmaal opnieuw; die helper wordt ook in de water-worker gebruikt. De regenradar gaat altijd langs de cache heen, omdat die elke paar minuten verandert. Verandert de vorm van de opgehaalde data, verhoog dan `CACHE_NAME` (bijvoorbeeld naar `adresrapport-v2`), zodat oude antwoorden niet meer gebruikt worden. (De opslagnamen in de browser, zoals `adresrapport.theme`, dateren van vóór de naam Adresverkenner; ze zijn bewust zo gebleven, zodat bestaande instellingen bewaard blijven.) Berekend water wordt per adres en scenario in het geheugen bewaard zolang de pagina open is.
 
+### Kwaliteit Mooi en Snel
+
+Snel tekent op schermen met hoge resolutie met één pixel per CSS-pixel, laadt 3D tot 150 m in plaats van 250 m, slaat de dakvormen (LoD 2.2) over, gebruikt een kleinere schaduwkaart en minder regendruppels en verlichte ramen. In de stand Automatisch meet `js/quality.js` de tijd tussen beeldjes terwijl de kaart tekent; twee meetperiodes van 3 seconden onder 22 beeldjes per seconde schakelen naar Snel, met een melding en een knop "Toch Mooi".
+
 ### Testen
 
-`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport, watersimulatie (loopt het water echt op?), 3D, cartoon, zon en nacht, bomen en seizoenen, meten, omgevingslagen en de regenradar. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
+`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport en samenvattingen, watersimulatie (loopt het water echt op?), 3D, cartoon, zon en nacht, bomen en seizoenen, meten, omgevingslagen, de knop Regen (radar, regen nu, verwachting) en Snel/Mooi. De test zet de kwaliteit vast op Mooi, omdat onzichtbaar Chrome met de processor tekent en anders vanzelf naar Snel zou schakelen. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
 
 ```sh
 pip install websocket-client
@@ -112,7 +119,7 @@ Safari is niet automatisch getest. Eerder bleek Safari strenger met het uitpakke
 - De watersimulatie toont de piekdiepte uit het model, geen tijdsverloop; de schuif is een benadering.
 - Zonnepanelen zijn een schatting zonder schaduw van bomen en buren.
 - Bomen zijn een optioneel onderdeel van de BGT; niet elke gemeente houdt ze volledig bij. De BGT kent geen boomsoort, dus alle bomen worden als loofboom getoond (kaal in de winter).
-- De regenradar komt van de gratis RainViewer-API: tegels tot zoomniveau 7 (ongeveer 1 km per pixel) en de afgelopen 2 uur, zonder voorspelling.
+- De regenradar komt van de gratis RainViewer-API: tegels tot zoomniveau 7 (ongeveer 1 km per pixel) en de afgelopen 2 uur. "Regen nu" leest de kleur van het nieuwste beeld (meestal 5 à 10 minuten oud); hoe zwaar het regent is daaruit afgeleid, en de kleuren van zware buien zijn nog niet bij echte zware regen gecontroleerd.
 - Gemeentelijke monumenten, energielabels (EP-Online, API-sleutel nodig) en WOZ-waardes per adres zijn niet als open data beschikbaar.
 - three.js tekent buiten MapLibre om. De hover in 3D gebruikt daarom een eigen straal, die een gewoon MapLibre-blok vóór een boom niet ziet.
 

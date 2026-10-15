@@ -19,7 +19,9 @@ html, body { margin: 0; height: 100%; font: 14px/1.4 system-ui, -apple-system, s
 #mapwrap { flex: 1; position: relative; }
 #map { position: absolute; inset: 0; }
 .titlebar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
-.titlebar h1 { flex: 1; }
+.titlebar h1 { flex: 1; min-width: 0; }
+.titlebar button { white-space: nowrap; }
+#help, #theme, #settings-btn { min-width: 32px; padding: 4px 8px; font-size: 15px; line-height: 1.2; }
 h1 { font-size: 18px; margin: 0; }
 .hint { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
 
@@ -49,8 +51,19 @@ dd .yr { font-weight: 400; font-size: 11px; color: var(--muted); }
 .kpi .k { font-size: 12px; color: var(--muted); }
 .kpi .v { font-size: 22px; font-weight: 700; }
 .kpi .s { font-size: 12px; color: var(--muted); }
-.section { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+/* Report sections fold away; the summary line says what's inside. */
+.section { margin-top: 0; padding: 10px 0; border-top: 1px solid var(--border); }
 .section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 10px; }
+details.section > summary { display: flex; align-items: baseline; gap: 8px; cursor: pointer; list-style: none; padding: 2px 0; }
+details.section > summary::-webkit-details-marker { display: none; }
+details.section > summary::before { content: '›'; color: var(--muted); font-size: 14px; transition: transform .15s; display: inline-block; width: 8px; }
+details.section[open] > summary::before { transform: rotate(90deg); }
+details.section > summary h2 { margin: 0; flex-shrink: 0; }
+details.section > summary .sum { color: var(--text); font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+details.section[open] > summary { margin-bottom: 10px; }
+details.section > summary:hover h2 { color: var(--text); }
+.section-tools { display: flex; justify-content: flex-end; margin: 14px 0 4px; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { details.section > summary::before { transition: none; } }
 .section h3 { font-size: 12px; color: var(--muted); margin: 12px 0 6px; font-weight: 600; }
 .note { font-size: 12px; color: var(--muted); margin-top: 8px; }
 a { color: var(--accent); }
@@ -76,7 +89,38 @@ tr.current td { background: var(--current); font-weight: 600; }
 #view-btns { top: 52px; left: 10px; display: flex; overflow: hidden; }
 #view-btns button { border-radius: 0; padding: 6px 12px; }
 #view-btns button:disabled { opacity: .6; }
-#flood { top: 94px; left: 10px; width: 250px; padding: 8px 10px; font-size: 12px; }
+/* Left column under the view buttons: the rain panel above the water panel. */
+#left-stack { position: absolute; top: 94px; left: 10px; width: 250px; display: flex; flex-direction: column; gap: 8px; max-height: calc(100% - 300px); }
+#left-stack > .mapctl { position: static; }
+#flood { padding: 8px 10px; font-size: 12px; }
+#rainlive { padding: 8px 10px; font-size: 12px; overflow-y: auto; }
+#rainlive[hidden] { display: none; }
+#rainlive .panel-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+#rainlive .panel-head .link { font-size: 18px; line-height: 1; color: var(--muted); }
+#rainlive .rain-now { margin-top: 4px; font-weight: 600; }
+#rainlive .row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+#rainlive .row .link { margin-left: auto; font-size: 12px; }
+#rainlive .sublabel { margin-top: 10px; color: var(--muted); font-weight: 600; }
+#rainlive label.check { display: flex; align-items: center; gap: 6px; margin-top: 6px; cursor: pointer; }
+#rainlive details { margin-top: 4px; }
+#rainlive summary { cursor: pointer; color: var(--accent); }
+.forecast-headline { margin: 2px 0 4px; }
+#rainlive .ramp-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+
+/* Settings popover and toast */
+.popover { position: absolute; z-index: 30; right: 20px; top: 56px; width: 280px; padding: 12px 14px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.18); font-size: 13px; }
+.popover[hidden] { display: none; }
+.popover fieldset { border: 0; margin: 0; padding: 0; }
+.popover legend { font-weight: 600; margin-bottom: 6px; }
+.popover label { display: flex; align-items: baseline; gap: 6px; padding: 3px 0; cursor: pointer; }
+.popover label .hint { margin: 0; }
+#panel { position: relative; }
+.toast { position: fixed; z-index: 70; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
+  max-width: calc(100% - 32px); padding: 10px 14px; background: var(--text); color: var(--bg); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.25); font-size: 13px; }
+.toast[hidden] { display: none; }
+.toast .link { color: var(--bg); font-weight: 600; text-decoration: underline; }
+#toast-close { text-decoration: none; font-size: 16px; }
 #flood label { font-weight: 600; display: block; margin-bottom: 4px; }
 #flood select { width: 100%; font: inherit; padding: 4px; border: 1px solid var(--border-strong); border-radius: 4px; }
 #flood .row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
@@ -218,7 +262,7 @@ button.link:hover { text-decoration: underline; }
   #controls-toggle[aria-expanded="true"] { background: var(--accent); color: var(--accent-text); }
   #map-controls { display: none; position: fixed; inset: 96px 10px 140px; z-index: 15; overflow-y: auto; flex-direction: column; gap: 8px; pointer-events: auto; }
   body.controls-open #map-controls { display: flex; }
-  #map-controls > .mapctl, #map-controls > #right-stack { position: static; width: auto; max-height: none; }
+  #map-controls > .mapctl, #map-controls > #right-stack, #map-controls > #left-stack { position: static; width: auto; max-height: none; }
   #map-controls #right-stack { align-items: stretch; }
   #map-controls #tools, #map-controls #envlayer { width: auto; }
   #legend { max-height: none; }
@@ -236,7 +280,8 @@ button.link:hover { text-decoration: underline; }
   #panel { width: auto; max-height: none; overflow: visible; padding: 0; border: 0; }
   #mapwrap, #search, .hint, #status, #recent, #print, #theme, #help, #welcome, #r-bagviewer { display: none !important; }
   #print-map { display: block; width: 100%; max-height: 90mm; object-fit: cover; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; }
-  #loadbar, #solar-show, .chart-tip, #panel details { display: none !important; }
+  #loadbar, #settings-btn, #settings, .section-tools, #toast, #solar-show, .chart-tip, #panel details:not(.section) { display: none !important; }
+  details.section > summary::before { content: none; }
   .tablewrap { max-height: none; overflow: visible; }
   /* Long sections may run over a page, but never split a heading from its
      content or a row in half. */

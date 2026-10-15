@@ -1,6 +1,7 @@
-// Rain during the heavy-rain scenario: streaks over the flat map, or drops
-// falling through 3D space, plus ripples where the water stands. Purely for
-// atmosphere; the water depths themselves come from the model.
+// Rain in the view: during the heavy-rain scenario, and when the live radar
+// shows real rain at the address. Streaks over the flat map, or drops falling
+// through 3D space, plus ripples where the scenario's water stands. Purely
+// for atmosphere; water depths come from the model, rain levels from the radar.
 // Loaded as a classic script; see index.html for the load order.
 
 const rain = {
@@ -18,10 +19,25 @@ const rain = {
 };
 $('rain-toggle').checked = rain.enabled;
 
-// It rains while the bui is still on its way to the peak: whenever the water
-// level is below 100%, which is what ▶ plays through.
-function isRaining() {
+// The scenario rains while the bui is still on its way to the peak: whenever
+// the water level is below 100%, which is what ▶ plays through.
+function scenarioRaining() {
   return rain.enabled && waterScenario === 'regen70' && !!water && Number($('flood-level').value) < 100;
+}
+
+// Real rain from the radar, unless switched off or the system asks for less motion.
+function liveRaining() {
+  return radar.active && liveRain.level > 0 && $('rain-live-anim').checked && !reducedMotion.matches;
+}
+
+function isRaining() {
+  return scenarioRaining() || liveRaining();
+}
+
+// Share of the full downpour to show: the scenario is a heavy storm, real
+// rain follows the radar level.
+function rainDensity() {
+  return Math.max(scenarioRaining() ? 1 : 0, liveRaining() ? RAIN_DENSITY[liveRain.level] : 0);
 }
 
 function updateRain() {
@@ -114,7 +130,7 @@ function step2d(dt, now) {
   const dark = isDark();
 
   // About one streak per 1,500 px², falling slightly slanted by the wind.
-  const target = Math.round((w * h) / 1500);
+  const target = Math.round((w * h) / 1500 * rainDensity() * (isFast() ? 0.5 : 1));
   while (rain.streaks.length < target) rain.streaks.push({ x: Math.random() * w, y: Math.random() * h, v: 700 + Math.random() * 400 });
   rain.streaks.length = target;
   ctx.strokeStyle = dark ? 'rgba(190, 210, 245, 0.45)' : 'rgba(90, 120, 170, 0.45)';
@@ -150,7 +166,8 @@ function step2d(dt, now) {
 
 // ---------- 3D: drops falling through space, ripples on the water ----------
 
-const RAIN_RADIUS = 150, RAIN_TOP = 70, DROP_COUNT = 5000, RIPPLE_POOL = 120;
+const RAIN_RADIUS = 150, RAIN_TOP = 70, RIPPLE_POOL = 120;
+const dropCount = () => (isFast() ? 2000 : 5000);
 
 // The group lives in the three.js scene; scene rebuilds hand it over.
 function moveRain3D(from, to) {
@@ -160,7 +177,7 @@ function moveRain3D(from, to) {
 }
 
 function ensureRain3D() {
-  const key = `${current.lon},${current.lat},${isDark()}`;
+  const key = `${current.lon},${current.lat},${isDark()},${quality.mode}`;
   if (rain.group && rain.groupKey === key) {
     if (rain.group.parent !== three.scene) three.scene.add(rain.group);
     return;
@@ -173,8 +190,9 @@ function ensureRain3D() {
   for (const s of rain.wet) s.local = frame.fromLngLat(s.lngLat);
 
   // Drops: short streaks, each a pair of points, slanted a little by the wind.
-  const pos = new Float32Array(DROP_COUNT * 6);
-  for (let i = 0; i < DROP_COUNT; i++) {
+  const count = dropCount();
+  const pos = new Float32Array(count * 6);
+  for (let i = 0; i < count; i++) {
     const x = (Math.random() * 2 - 1) * RAIN_RADIUS, y = (Math.random() * 2 - 1) * RAIN_RADIUS, z = Math.random() * RAIN_TOP;
     pos.set([x, y, z, x + 0.15, y + 0.1, z + 1.2], i * 6);
   }
@@ -203,7 +221,7 @@ function ensureRain3D() {
 }
 
 function step3d(dt, now) {
-  if (!rain.wet.length || !current) return;
+  if (!current) return;
   ensureRain3D();
   rain.group.visible = true;
 
@@ -219,9 +237,12 @@ function step3d(dt, now) {
     }
   }
   rain.drops.geometry.attributes.position.needsUpdate = true;
+  // Lighter rain: draw only part of the drops (two vertices per drop).
+  rain.drops.geometry.setDrawRange(0, Math.round(rain.drops.geometry.attributes.position.count * rainDensity() / 2) * 2);
 
   // Ripples on the water surface, at the current depth of each spot.
-  let spawn = Math.round(60 * dt + Math.random());
+  // Ripples need the scenario's water to land in.
+  let spawn = scenarioRaining() && rain.wet.length ? Math.round(60 * dt + Math.random()) : 0;
   for (const r of rain.ripples3d) {
     const t = (now - r.t0) / 700;
     if (r.ring.visible && t >= 1) r.ring.visible = false;

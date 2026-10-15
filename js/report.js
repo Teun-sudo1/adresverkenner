@@ -377,6 +377,7 @@ async function loadAddress(lsId, { pushHistory = true } = {}) {
     loadHeritage(current, pandenKnown, stale);
     loadYearProfile(current, pandenKnown.then(p => p[0]?.properties.bouwjaar ?? null), stale);
     loadTrees(current, stale);
+    onRainPlaceChanged();
     if (is3D) loadTreeHeights(current).catch(err => console.error(err));
 
     // Positions 5–6 of a BAG object id give its type: 01 = verblijfsobject,
