@@ -8,6 +8,7 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 
 - **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS (naast gemeente en Nederland), voorzieningen in de buurt (OpenStreetMap), klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Elk onderwerp is een uitklapbaar blok met een samenvattende regel. Ook te printen als pdf.
 - **3D:** de omgeving tot 750 m in 3D (de binnenste 250 m met dakvormen, filters en schaduw), bomen, straatlantaarns, grachten met bewegend water, een lucht die meekleurt met de zon, en een rondvlucht van 10 seconden van nacht naar dag (of andersom) bij het eerste bezoek aan een adres in 3D.
+- **Tijd in 3D:** kies datum en tijd; dag, schemering en nacht (met lucht, sterren, verlichte ramen en lantaarns) volgen die tijd.
 - **Zon en schaduw:** schaduwen op elk tijdstip, een zonuren-kaart per dag, nachtweergave met verlichte ramen, en bomen per seizoen.
 - **Water (knop Overstroming):** de hoogte van het maaiveld ten opzichte van NAP, hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
 - **Regen nu:** de live regenradar van de afgelopen 2 uur, of het nu regent bij het adres (dan valt er ook echt regen in beeld), en de verwachting voor de komende 2 uur per kwartier.

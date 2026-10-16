@@ -20,6 +20,8 @@ async function set3D(on) {
   await mapReady;
   for (const id of ['pand-fill', 'pand-line']) map.setLayoutProperty(id, 'visibility', is3D ? 'none' : 'visible');
   updateSunPanel();
+  // Day or night at the chosen time in 3D; the flat map is always daylight.
+  updateSun();
   applyBuildingStyle();
   updateLegendHint();
   // Centre on the address: a flight to it may still be under way.
@@ -448,7 +450,7 @@ function buildThreeScene() {
   }
 
   pickables.push(...addTrees(scene, frame, sun.on));
-  const windows = sun.on ? addWindows(scene, frame) : null;
+  const windows = addWindows(scene, frame);
   const streetLights = addLights(scene, frame);
   const canalMesh = addCanals(scene, frame);
 
@@ -629,6 +631,8 @@ function updateWindows(night) {
 // ---------- Sun and shadow ----------
 
 const sun = { on: false };
+// The time of day lights the 3D view: day, dusk, night with lit windows and street lights.
+const timeOn = () => is3D;
 
 // Sun position (after SunCalc, V. Agafonkin): altitude above the horizon and
 // azimuth clockwise from north, both in radians.
@@ -677,13 +681,13 @@ function currentSun() {
 // 0 by day, 1 at night: from sunset until the sun is 6° below the horizon
 // (end of civil twilight).
 function nightFactor() {
-  const pos = sun.on ? currentSun() : null;
+  const pos = timeOn() ? currentSun() : null;
   return pos ? Math.min(1, Math.max(0, -pos.altitude * 180 / Math.PI / 6)) : 0;
 }
 
 function updateSunLight() {
   if (!three.scene) return;
-  const pos = sun.on ? currentSun() : null;
+  const pos = timeOn() ? currentSun() : null;
   updateWindows(nightFactor());
   updateLights(nightFactor());
   updateWaterGlint();
@@ -692,9 +696,10 @@ function updateSunLight() {
     const c = Math.cos(pos.altitude);
     three.sunLight.position.set(Math.sin(pos.azimuth) * c * 1000, Math.cos(pos.azimuth) * c * 1000, Math.sin(pos.altitude) * 1000);
     three.sunLight.intensity = up ? 0.8 + 2 * Math.min(1, Math.sin(pos.altitude) * 2) : 0;
-    three.sunLight.castShadow = up;
+    // Shadows only with Zon on; the time of day lights the scene either way.
+    three.sunLight.castShadow = up && sun.on;
     three.ambient.intensity = up ? 1.1 : 0.5 - 0.25 * nightFactor();
-    if (three.plane) three.plane.visible = up;
+    if (three.plane) three.plane.visible = up && sun.on;
   } else {
     three.sunLight.position.set(-600, -1000, 1800);
     three.sunLight.intensity = 2.2;
@@ -705,9 +710,9 @@ function updateSunLight() {
   map.triggerRepaint();
 }
 
-// MapLibre lights its own 3D blocks: from the sun when it's on.
+// MapLibre lights its own 3D blocks: from the sun at the chosen time.
 function applyMapLight() {
-  const pos = sun.on ? currentSun() : null;
+  const pos = timeOn() ? currentSun() : null;
   const dark = isDark();
   if (pos) {
     const altDeg = pos.altitude * 180 / Math.PI;
@@ -737,9 +742,13 @@ function updateSun() {
   applyMapLight();
 }
 
+// In 3D the time panel is always there; Zon adds shadows and the sun-hours map.
 function updateSunPanel() {
-  $('sun').hidden = !(is3D && sun.on);
-  updatePhoneCards(is3D && sun.on);
+  $('sun').hidden = !is3D;
+  $('sun-title').textContent = sun.on ? 'Tijd, zon en schaduw' : 'Tijd';
+  $('sunhours-row').hidden = !sun.on;
+  document.body.classList.toggle('sun-on', sun.on);
+  updatePhoneCards(is3D);
 }
 
 function toggleSun() {
@@ -890,7 +899,7 @@ function drawStars() {
   }
   ctx.globalAlpha = 1;
 }
-map.on('move', () => { if (sun.on) drawStars(); });
+map.on('move', () => { if (is3D) drawStars(); });
 map.on('resize', drawStars);
 
 $('theme').addEventListener('click', () => setTheme(isDark() ? 'light' : 'dark', true));

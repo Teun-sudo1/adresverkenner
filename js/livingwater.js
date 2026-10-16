@@ -29,20 +29,23 @@ float waterNoise(vec2 p) {
   return mix(mix(waterHash(i), waterHash(i + vec2(1.0, 0.0)), u.x),
              mix(waterHash(i + vec2(0.0, 1.0)), waterHash(i + vec2(1.0, 1.0)), u.x), u.y);
 }
-// Three layers of drifting noise in different directions: 0 in troughs, 1 on crests.
+// Three layers of drifting noise in different directions, from swells of
+// several metres (visible from afar) to small ripples: 0 in troughs, 1 on crests.
 float waterWaves(vec2 p, float t) {
-  return 0.5 * waterNoise(p * 0.45 + vec2(t * 0.35, t * 0.12))
-       + 0.3 * waterNoise(p * 0.9 - vec2(t * 0.2, t * 0.45))
-       + 0.2 * waterNoise(p * 1.9 + vec2(t * 0.6, -t * 0.3));
+  return 0.45 * waterNoise(p * 0.18 + vec2(t * 0.25, t * 0.1))
+       + 0.3 * waterNoise(p * 0.5 - vec2(t * 0.15, t * 0.35))
+       + 0.25 * waterNoise(p * 1.4 + vec2(t * 0.5, -t * 0.25));
 }
 ` + shader.fragmentShader.replace('#include <dithering_fragment>', `#include <dithering_fragment>
   if (vWaterUp > 0.5) {
     float w = waterWaves(vWaterPos.xy, uTime);
-    gl_FragColor.rgb *= 0.88 + 0.24 * w;
-    // Sparse bright patches on the highest crests, only with sunlight.
-    float glint = smoothstep(0.7, 0.8, w) * uGlint;
-    gl_FragColor.rgb += vec3(1.0, 0.97, 0.88) * glint * 0.5;
-    gl_FragColor.a = min(1.0, gl_FragColor.a + glint * 0.25);
+    // Dark troughs, lighter crests, and a pale sheen where the light catches.
+    gl_FragColor.rgb *= 0.7 + 0.55 * w;
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.78, 0.9, 1.0), smoothstep(0.55, 0.75, w) * 0.35 * (0.4 + 0.6 * uGlint));
+    // Bright glints on the highest crests, only with sunlight.
+    float glint = smoothstep(0.66, 0.76, w) * uGlint;
+    gl_FragColor.rgb += vec3(1.0, 0.97, 0.88) * glint * 0.7;
+    gl_FragColor.a = min(1.0, gl_FragColor.a + glint * 0.3);
   }`);
   };
   return material;
@@ -50,7 +53,7 @@ float waterWaves(vec2 p, float t) {
 
 // Glints follow the sun: full by day, none at night.
 function updateWaterGlint() {
-  const pos = sun.on ? currentSun() : null;
+  const pos = timeOn() ? currentSun() : null;
   waterUniforms.uGlint.value = pos ? Math.max(0, Math.min(1, pos.altitude * 180 / Math.PI / 8)) : (isDark() ? 0.35 : 1);
 }
 
@@ -102,7 +105,7 @@ function addCanals(scene, frame) {
   // Every face points up; set it directly, the triangles' winding varies.
   geometry.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(pos.length).map((_, i) => (i % 3 === 2 ? 1 : 0)), 3));
   const mesh = new THREE.Mesh(geometry, livingWaterMaterial({
-    color: isDark() ? 0x2b5c86 : 0x5f9fd6, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide
+    color: isDark() ? 0x24547e : 0x3f86c6, transparent: true, opacity: 0.9, depthWrite: false, side: THREE.DoubleSide
   }));
   mesh.frustumCulled = false;
   mesh.receiveShadow = sun.on;

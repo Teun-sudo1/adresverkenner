@@ -16,7 +16,8 @@ function viewParams() {
   if (colorBy !== 'bouwjaar') p.push(['kleur', colorBy || 'geen']);
   if ($('env-layer').value) p.push(['laag', $('env-layer').value]);
   if (is3D) p.push(['3d', '1']);
-  if (sun.on) p.push(['zon', `${$('sun-date').value},${$('sun-time').value}`]);
+  if (is3D) p.push(['tijd', `${$('sun-date').value},${$('sun-time').value}`]);
+  if (sun.on) p.push(['zon', '1']);
   if (waterScenario) p.push(['water', waterScenario]);
   if (radar.active) p.push(['regen', '1']);
   // Commas stay readable; everything else is encoded.
@@ -51,8 +52,10 @@ async function openSharedLink(params) {
   const k = params.get('kaart')?.split(',').map(Number);
   const camera = k?.length === 5 && k.every(Number.isFinite)
     ? { center: [k[0], k[1]], zoom: k[2], bearing: k[3], pitch: k[4] } : null;
-  const zon = params.get('zon')?.split(',');
-  const sunOk = zon && /^\d{4}-\d\d-\d\d$/.test(zon[0]) && Number(zon[1]) >= 0 && Number(zon[1]) < 1440;
+  // tijd=date,minutes; older links carried the time in zon=date,minutes.
+  const tijd = (params.get('tijd') || params.get('zon'))?.split(',');
+  const timeOk = tijd && /^\d{4}-\d\d-\d\d$/.test(tijd[0]) && Number(tijd[1]) >= 0 && Number(tijd[1]) < 1440;
+  const sunOk = !!params.get('zon');
   applyingView = true;
   try {
     await mapReady;
@@ -60,9 +63,9 @@ async function openSharedLink(params) {
     const kleur = params.get('kleur');
     if (kleur) chooseOption('color-by', kleur === 'geen' ? '' : kleur);
     if (params.get('laag')) chooseOption('env-layer', params.get('laag'));
-    if (sunOk) {
-      $('sun-date').value = zon[0];
-      $('sun-time').value = Math.round(Number(zon[1]) / 5) * 5;
+    if (timeOk) {
+      $('sun-date').value = tijd[0];
+      $('sun-time').value = Math.round(Number(tijd[1]) / 5) * 5;
       updateTreeSeason();
     }
     const water = params.get('water');

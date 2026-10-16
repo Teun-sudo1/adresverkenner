@@ -41,19 +41,17 @@ async function flyAround() {
   await waitUntil(() => current !== ctx || (sceneFor === ctx && sceneFeatures.length > 0 && three.scene), 20000);
   if (current !== ctx || !is3D || flight.frame) return;
 
-  const before = { sunOn: sun.on, date: $('sun-date').value, time: $('sun-time').value };
+  const before = { date: $('sun-date').value, time: $('sun-time').value };
   const today = new Date();
   const pad = n => String(n).padStart(2, '0');
   $('sun-date').value = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
   updateTreeSeason();
   const nowMin = Math.round((today.getHours() * 60 + today.getMinutes()) / 5) * 5;
-  if (!sun.on) toggleSun();
   flight.restore = () => {
     $('sun-date').value = before.date;
     $('sun-time').value = before.time;
     updateTreeSeason();
-    if (sun.on !== before.sunOn) toggleSun();
-    else updateSun();
+    updateSun();
   };
 
   const t0 = performance.now();
@@ -76,7 +74,7 @@ async function flyAround() {
   flight.frame = requestAnimationFrame(step);
 }
 
-// Ends the flight; the sun and time go back to how they were.
+// Ends the flight; the date and time go back to how they were.
 function stopFlight() {
   if (!flight.frame && !flight.restore) return;
   cancelAnimationFrame(flight.frame);

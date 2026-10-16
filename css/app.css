@@ -151,6 +151,7 @@ tr.current td { background: var(--current); font-weight: 600; }
 #sun[hidden] { display: none; }
 #sun label { display: block; font-weight: 600; margin-bottom: 2px; }
 #sun .row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+#sun .row[hidden] { display: none; }
 #sun input[type=date] { flex: 1; min-width: 0; font: inherit; padding: 3px 4px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--surface); color: var(--text); }
 #sun input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
 #sun-clock { font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -309,6 +310,8 @@ table.figures tbody th { font-weight: 400; color: var(--muted); }
 #groei-timeline .lab { font-size: 10px; text-align: left; white-space: nowrap; overflow: hidden; }
 .groei-note { margin: 8px 0 0; font-size: 11px; color: #8f98ab; }
 @media (max-width: 700px) {
+  /* The time card stays small on a phone until Zon is on. */
+  body:not(.sun-on) #sun-info { display: none; }
   #groei-open span { display: none; }
   #groei-open { padding: 8px 10px; }
   #groei-year { font-size: 28px; }
