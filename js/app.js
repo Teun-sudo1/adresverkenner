@@ -181,7 +181,16 @@ const WELCOME_KEY = 'adresrapport.welcomeSeen';
 const searchHome = { parent: $('search').parentNode, next: $('search').nextSibling };
 let focusBeforeWelcome = null;
 
+// The basic choices up front: light or dark, Dutch or English.
+function updateWelcomePrefs() {
+  for (const b of document.querySelectorAll('[data-theme-choice]')) b.setAttribute('aria-pressed', b.dataset.themeChoice === (isDark() ? 'dark' : 'light'));
+  for (const b of document.querySelectorAll('[data-lang-choice]')) b.setAttribute('aria-pressed', b.dataset.langChoice === LANG);
+}
+for (const b of document.querySelectorAll('[data-theme-choice]')) b.addEventListener('click', () => { setTheme(b.dataset.themeChoice, true); updateWelcomePrefs(); });
+for (const b of document.querySelectorAll('[data-lang-choice]')) b.addEventListener('click', () => { if (b.dataset.langChoice !== LANG) setLanguage(b.dataset.langChoice); });
+
 function openWelcome() {
+  updateWelcomePrefs();
   focusBeforeWelcome = document.activeElement;
   $('welcome-search-slot').append($('search'));
   $('welcome').hidden = false;

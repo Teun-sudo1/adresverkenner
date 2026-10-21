@@ -108,8 +108,9 @@ async function loadEnvironment(x, y, stale) {
 }
 
 map.on('click', async e => {
-  // While measuring, clicks place points instead of looking up addresses.
-  if (measure.mode) return;
+  // While measuring, clicks place points instead of looking up addresses;
+  // while looking around from the roof, dragging mustn't jump to another address.
+  if (measure.mode || roofView.on) return;
   setStatus('Adres zoeken bij klikpunt…');
   try {
     const { lng, lat } = e.lngLat;

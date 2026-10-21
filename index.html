@@ -35,6 +35,20 @@
       <button type="button" class="link" data-id="adr-8f4d573be765b4c80dd635ba73747903">Damrak 1, Amsterdam</button> ·
       <button type="button" class="link" data-id="adr-52d81e8de2de65f13c910a53e1a477f9">Van Heukelomstraat 201, Rotterdam</button>
     </p>
+    <div class="welcome-prefs">
+      <div class="pref"><span class="pref-label">Thema</span>
+        <div class="seg" role="group" aria-label="Thema">
+          <button type="button" data-theme-choice="light" aria-pressed="false">Licht</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Donker</button>
+        </div>
+      </div>
+      <div class="pref"><span class="pref-label">Taal</span>
+        <div class="seg" role="group" aria-label="Taal" translate="no">
+          <button type="button" data-lang-choice="nl" aria-pressed="false">Nederlands</button>
+          <button type="button" data-lang-choice="en" aria-pressed="false">English</button>
+        </div>
+      </div>
+    </div>
     <div class="tiles">
       <div class="tile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
@@ -67,7 +81,7 @@
         <p>Zet twee adressen naast elkaar, of haal tot 200 adressen tegelijk op als CSV voor Excel.</p>
       </div>
     </div>
-    <p class="disclaimer">Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. Alle knoppen voor de kaart staan in de werkbalk linksboven; de taal (English) kies je bij Instellingen. De waterkaarten zijn modelscenario's: ze geven een indicatie, geen voorspelling voor een specifiek adres.</p>
+    <p class="disclaimer">Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. Alle knoppen voor de kaart staan in de werkbalk linksboven; thema, taal en kwaliteit kun je later altijd wijzigen. De waterkaarten zijn modelscenario's: ze geven een indicatie, geen voorspelling voor een specifiek adres.</p>
     <button id="welcome-start" type="button">Naar de kaart</button>
   </div>
 </div>
@@ -309,7 +323,7 @@
   <div id="mapwrap">
     <div id="map"></div>
     <canvas id="stars" aria-hidden="true"></canvas>
-    <div id="roofview" class="mapctl" role="status" hidden><span id="roofview-text"></span><button type="button" id="roofview-stop">Stoppen</button></div>
+    <div id="roofview" class="mapctl" role="status" hidden><span id="roofview-text"></span><button type="button" id="roofview-stop" title="Rondkijken stoppen (Esc)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Rondkijken stoppen</span></button></div>
     <canvas id="rain-canvas" aria-hidden="true"></canvas>
     <button type="button" id="panel-toggle" aria-controls="panel" aria-expanded="true" aria-label="Adresinfo inklappen" title="Adresinfo in- of uitklappen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
     <button type="button" id="panel-show" class="mapctl glass" aria-controls="panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M14 9l3 3-3 3"/></svg><span>Adresinfo</span></button>

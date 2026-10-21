@@ -166,8 +166,11 @@ function step2d(dt, now) {
 
 // ---------- 3D: drops falling through space, ripples on the water ----------
 
-const RAIN_RADIUS = 150, RAIN_TOP = 70, RIPPLE_POOL = 120;
-const dropCount = () => (isFast() ? 2000 : 5000);
+// The drops fill a box that follows the view: centred on the map centre and
+// as wide as what's in sight (at least 150 m, at most the 3D area), so the
+// rain covers the whole screen at any zoom or tilt.
+const RAIN_MIN_RADIUS = 150, RAIN_MIN_TOP = 70, RIPPLE_POOL = 120;
+const dropCount = () => (isFast() ? 5000 : 12000);
 
 // The group lives in the three.js scene; scene rebuilds hand it over.
 function moveRain3D(from, to) {
@@ -190,11 +193,13 @@ function ensureRain3D() {
   for (const s of rain.wet) s.local = frame.fromLngLat(s.lngLat);
 
   // Drops: short streaks, each a pair of points, slanted a little by the wind.
+  // They live in a unit box (x, y from -1 to 1, z from 0 to 1); step3d scales
+  // it to the view.
   const count = dropCount();
   const pos = new Float32Array(count * 6);
   for (let i = 0; i < count; i++) {
-    const x = (Math.random() * 2 - 1) * RAIN_RADIUS, y = (Math.random() * 2 - 1) * RAIN_RADIUS, z = Math.random() * RAIN_TOP;
-    pos.set([x, y, z, x + 0.15, y + 0.1, z + 1.2], i * 6);
+    const x = Math.random() * 2 - 1, y = Math.random() * 2 - 1, z = Math.random();
+    pos.set([x, y, z, x + 0.001, y + 0.0007, z + 0.017], i * 6);
   }
   const dropGeom = new THREE.BufferGeometry();
   dropGeom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -225,20 +230,33 @@ function step3d(dt, now) {
   ensureRain3D();
   rain.group.visible = true;
 
+  // Fit the box to the view: half the screen diagonal in metres, more when tilted.
+  const frame = localFrame();
+  const centre = frame.fromLngLat(map.getCenter().toArray());
+  const canvas = map.getCanvas();
+  const metresPerPixel = 40075016.686 * Math.cos(current.lat * Math.PI / 180) / (512 * 2 ** map.getZoom());
+  const reach = Math.hypot(canvas.clientWidth, canvas.clientHeight) / 2 * metresPerPixel * (1 + map.getPitch() / 45);
+  const radius = Math.min(SCENE_RADIUS_OUTER, Math.max(RAIN_MIN_RADIUS, reach));
+  const top = Math.max(RAIN_MIN_TOP, radius / 2);
+  rain.drops.position.set(centre[0], centre[1], 0);
+  rain.drops.scale.set(radius, radius, top);
+
   // Fall at ~9 m/s; drops that reach the ground start again at the top.
   const pos = rain.drops.geometry.attributes.position.array;
-  const fall = 9 * dt;
+  const fall = 9 * dt / top;
   for (let i = 0; i < pos.length; i += 6) {
     pos[i + 2] -= fall;
     pos[i + 5] -= fall;
     if (pos[i + 2] < 0) {
-      pos[i + 2] += RAIN_TOP;
-      pos[i + 5] += RAIN_TOP;
+      pos[i + 2] += 1;
+      pos[i + 5] += 1;
     }
   }
   rain.drops.geometry.attributes.position.needsUpdate = true;
-  // Lighter rain: draw only part of the drops (two vertices per drop).
-  rain.drops.geometry.setDrawRange(0, Math.round(rain.drops.geometry.attributes.position.count * rainDensity() / 2) * 2);
+  // Lighter rain draws only part of the drops (two vertices per drop); a
+  // close-up view needs fewer than the whole neighbourhood.
+  const share = rainDensity() * Math.min(1, 0.4 + radius / 1250);
+  rain.drops.geometry.setDrawRange(0, Math.round(rain.drops.geometry.attributes.position.count * share / 2) * 2);
 
   // Ripples on the water surface, at the current depth of each spot.
   // Ripples need the scenario's water to land in.

@@ -130,8 +130,8 @@ const EN_TEXT = {
     'Colour buildings by construction year or use, show noise, air or heat, measure distances and share the map.',
   'Vergelijken en lijsten': 'Compare and lists', 'Zet twee adressen naast elkaar, of haal tot 200 adressen tegelijk op als CSV voor Excel.':
     'Put two addresses side by side, or fetch up to 200 addresses at once as a CSV for Excel.',
-  'Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. Alle knoppen voor de kaart staan in de werkbalk linksboven; de taal (English) kies je bij Instellingen. De waterkaarten zijn modelscenario\'s: ze geven een indicatie, geen voorspelling voor een specifiek adres.':
-    'Tip: you can also just click the map to fetch the nearest address. All map buttons are in the toolbar at the top left; choose the language (Nederlands) under Settings. The water maps are model scenarios: they give an indication, not a forecast for a specific address.',
+  'Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. Alle knoppen voor de kaart staan in de werkbalk linksboven; thema, taal en kwaliteit kun je later altijd wijzigen. De waterkaarten zijn modelscenario\'s: ze geven een indicatie, geen voorspelling voor een specifiek adres.':
+    'Tip: you can also just click the map to fetch the nearest address. All map buttons are in the toolbar at the top left; you can always change the theme, language and quality later. The water maps are model scenarios: they give an indication, not a forecast for a specific address.',
   // Report
   'Alles openklappen': 'Expand all', 'Alles dichtklappen': 'Collapse all',
   'Bouwjaar': 'Construction year', 'Oppervlakte': 'Floor area', 'dit verblijfsobject': 'this unit',
@@ -208,7 +208,7 @@ const EN_TEXT = {
   'Draaien en kantelen': 'Rotate and tilt',
   'Draaien en kantelen. Sleep langs de rand om te draaien, in het midden omhoog of omlaag om te kantelen, tik voor het noorden boven. Pijltjestoetsen werken ook.':
     'Rotate and tilt. Drag along the edge to rotate, in the middle up or down to tilt, tap for north up. Arrow keys work too.',
-  'Rondvlucht om het adres': 'Fly around the address', 'Uitzicht vanaf het dak': 'View from the roof', 'Stoppen': 'Stop',
+  'Rondvlucht om het adres': 'Fly around the address', 'Rondkijken stoppen': 'Stop looking around', 'Rondkijken stoppen (Esc)': 'Stop looking around (Esc)', 'Thema': 'Theme', 'Licht': 'Light', 'Donker': 'Dark', 'Uitzicht vanaf het dak': 'View from the roof', 'Stoppen': 'Stop',
   'Zoek eerst een adres voor een rondvlucht.': 'First search for an address to fly around.',
   'Zoek eerst een adres voor het uitzicht vanaf het dak.': 'First search for an address for the view from the roof.',
   // Rain

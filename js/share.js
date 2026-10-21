@@ -30,7 +30,9 @@ function scheduleShareUrl() {
   shareTimer = setTimeout(() => {
     if (!addressId || applyingView) return;
     const search = `?${viewParams()}`;
-    if (search !== location.search) try { history.replaceState({ id: addressId }, '', search); } catch {}
+    if (search === location.search) return;
+    // The browser may refuse when the address bar changes too often; try again shortly.
+    try { history.replaceState({ id: addressId }, '', search); } catch { shareTimer = setTimeout(scheduleShareUrl, 1000); }
   }, 400);
 }
 map.on('moveend', scheduleShareUrl);

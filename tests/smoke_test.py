@@ -194,6 +194,12 @@ def test_welcome(b, r, base_url):
     b.screenshot('welkom')
     r.check('welkom: verschijnt bij eerste bezoek, met de zoekbalk erin',
             ok and b.js("document.getElementById('welcome-search-slot').contains(document.getElementById('q'))"))
+    themes = b.js("""(() => {
+      const pick = t => { document.querySelector(`[data-theme-choice=${t}]`).click(); return document.documentElement.dataset.theme
+        + (document.querySelector(`[data-theme-choice=${t}]`).getAttribute('aria-pressed') === 'true' ? '' : '?'); };
+      return [pick('dark'), pick('light'), document.querySelector('[data-lang-choice=nl]').getAttribute('aria-pressed')].join(' ');
+    })()""")
+    r.check('welkom: thema en taal kiezen', themes == 'dark light true', themes)
     # Each toolbar button (except the base maps) and the search extras need a mention.
     missing = b.js("""(() => {
       const text = document.getElementById('welcome').textContent.toLowerCase();
@@ -214,7 +220,8 @@ def test_welcome(b, r, base_url):
     b.wait_for("typeof loadAddress === 'function' && !document.getElementById('welcome').hidden", 30)
     b.pump(1)
     dutch = b.js("""[...document.querySelectorAll('#welcome h2, #welcome h3, #welcome p, #welcome button:not([data-id])')]
-      .filter(el => /[a-z]{3}/i.test(el.textContent) && el.textContent.trim() === nlText(el).trim() && !/^Adresverkenner$/.test(el.textContent.trim()))
+      .filter(el => /[a-z]{3}/i.test(el.textContent) && el.textContent.trim() === nlText(el).trim() && !/^Adresverkenner$/.test(el.textContent.trim())
+        && !el.closest('[translate=no]'))
       .map(el => el.textContent.trim().slice(0, 40))""")
     r.check('welkom: helemaal vertaald in het Engels', not dutch, '; '.join(dutch))
     b.js("localStorage.removeItem('adresrapport.lang')")
@@ -408,6 +415,13 @@ def test_roof_view(b, r, key):
     b.pump(2)
     alt = b.js('roofView.alt')
     b.screenshot(f'{key}-dak')
+    # Dragging to look around ends in a click on the map: that mustn't load another address.
+    left, top = b.js("(() => { const r = map.getCanvas().getBoundingClientRect(); return [r.left, r.top]; })()")
+    before = b.js('addressId')
+    for t, x in (('mouseMoved', 600), ('mousePressed', 600), ('mouseMoved', 640), ('mouseReleased', 640)):
+        b.send('Input.dispatchMouseEvent', {'type': t, 'x': left + x, 'y': top + 400, 'button': 'left', 'clickCount': 1})
+    b.pump(2)
+    r.check(f'{key}: rondkijken laadt geen ander adres', b.js('roofView.on') and b.js('addressId') == before and b.js('pendingLoads') == 0)
     b.js("document.getElementById('roofview-stop').click()")
     b.pump(1)
     r.check(f'{key}: uitzicht vanaf het dak', ok and alt and alt > 5 and b.js('!roofView.on && map.dragPan.isEnabled()'), f'{alt and round(alt)} m hoog')
@@ -435,9 +449,12 @@ def test_share(b, r, key, base_url):
     b.wait_for('is3D && sun.on', 30)
     b.js("(() => { document.getElementById('sun-date').value = '2026-03-21'; const t = document.getElementById('sun-time'); t.value = 600; t.dispatchEvent(new Event('input')); })()")
     b.js("map.jumpTo({center: [current.lon + 0.0005, current.lat], zoom: 17.5, pitch: 50, bearing: 30})")
-    b.pump(1.5)
+    # The link follows 0.4 s after the last change; with 3D and shadows on the
+    # CPU, headless Chrome can take a few seconds per frame, so wait for it.
+    b.wait_for("location.search.includes('zon=1') && location.search.includes(',30,50')", 10)
     search = b.js('location.search')
-    r.check(f'{key}: link onthoudt de weergave', all(t in search for t in ('id=', 'kaart=', 'basis=luchtfoto', 'laag=geluid', '3d=1', 'tijd=2026-03-21,600', 'zon=1', 'water=ov_grote')), search)
+    state = b.js("JSON.stringify({applyingView, addressId: !!addressId, is3D, sun: sun.on, roof: roofView.on})")
+    r.check(f'{key}: link onthoudt de weergave', all(t in search for t in ('id=', 'kaart=', 'basis=luchtfoto', 'laag=geluid', '3d=1', 'tijd=2026-03-21,600', 'zon=1', 'water=ov_grote')), f'{search}  {state}')
     b.send('Page.navigate', {'url': base_url + search})
     b.pump(2)
     ok = b.wait_for("typeof addressId !== 'undefined' && addressId && is3D && sun.on && !applyingView", 90)
