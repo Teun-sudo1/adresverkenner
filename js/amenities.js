@@ -28,6 +28,14 @@ const AMENITIES = [
     icon: '<path d="M4 21V4h16v17"/><path d="M9 4v9M15 4v9M8 13h8"/>' },
   { key: 'park', label: 'Park', r: 1500, is: p => p.class === 'park',
     icon: '<path d="M12 3l6 8h-3.5l4.5 6H5l4.5-6H6z"/><path d="M12 17v4"/>' },
+  { key: 'sporthal', label: 'Sporthal of sportcentrum', r: 1500, is: p => p.class === 'sports_centre' || p.class === 'stadium' || p.class === 'gymnastics',
+    icon: '<path d="M6 7v10M3 9.5v5M18 7v10M21 9.5v5M6 12h12"/>' },
+  { key: 'zwembad', label: 'Zwembad', r: 1500, is: p => p.class === 'swimming_pool' || p.subclass === 'swimming',
+    icon: '<path d="M2 18c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0 2 .7 2 .7"/><circle cx="16" cy="6" r="2"/><path d="M4 14l5-5 3 3 2-2"/>' },
+  // Fields for club sports and courts; not ping-pong or chess tables and boules courts.
+  { key: 'sportveld', label: 'Sportveld', r: 1500,
+    is: p => p.class === 'pitch' && !/^(table_tennis|chess|table_soccer|boules|dog_agility|undefined)$/.test(String(p.subclass)),
+    icon: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M12 5v14"/><circle cx="12" cy="12" r="2.5"/>' },
   { key: 'laadpaal', label: 'Laadpaal', r: 1000, is: p => p.subclass === 'charging_station',
     icon: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>' }
 ];
@@ -114,10 +122,10 @@ async function poiTiles() {
 }
 
 // Every point in the zoom-14 tiles that touch the circle around the address.
-async function fetchPois(lon, lat) {
+async function fetchPois(lon, lat, radius = AMENITY_RADIUS) {
   const template = await poiTiles();
   const n = 2 ** POI_ZOOM;
-  const dLon = AMENITY_RADIUS / (111320 * Math.cos(lat * Math.PI / 180)), dLat = AMENITY_RADIUS / 110574;
+  const dLon = radius / (111320 * Math.cos(lat * Math.PI / 180)), dLat = radius / 110574;
   const tx = l => Math.floor((l + 180) / 360 * n);
   const ty = b => Math.floor((1 - Math.log(Math.tan(b * Math.PI / 180) + 1 / Math.cos(b * Math.PI / 180)) / Math.PI) / 2 * n);
   const tiles = [];
@@ -144,6 +152,7 @@ async function loadAmenities(ctx, stale) {
   clearAmenityMarkers();
   amenities.found = [];
   $('amenities-section').hidden = true;
+  updateWalkRings();
   try {
     const points = await track(fetchPois(ctx.lon, ctx.lat));
     if (stale()) return;
@@ -171,7 +180,7 @@ function renderAmenities() {
     dt.textContent = a.label;
     const dd = document.createElement('dd');
     if (a.nearest) {
-      dd.textContent = `${fmtDistance(a.nearest.d)} · ${amenityName(a, a.nearest)}`;
+      dd.textContent = `${fmtDistance(a.nearest.d)} · ${walkMinutes(a.nearest.d)} min lopen · ${amenityName(a, a.nearest)}`;
       dd.dataset.v = fmtDistance(a.nearest.d);
       const cmp = document.createElement('span');
       cmp.className = 'cmp';
@@ -196,6 +205,7 @@ function clearAmenityMarkers() {
 
 function updateAmenityMarkers() {
   clearAmenityMarkers();
+  updateWalkRings();
   if (!$('amenities-section').open) return;
   for (const a of amenities.found) {
     if (!a.nearest) continue;
@@ -212,3 +222,49 @@ function updateAmenityMarkers() {
 }
 
 $('amenities-section').addEventListener('toggle', updateAmenityMarkers);
+
+// ---------- Walking distance ----------
+
+// Circles for 5, 10 and 15 minutes' walk (4.8 km/h) or cycle (15 km/h), as
+// the crow flies; via the streets it's usually a little further. They show
+// with the markers while the section is open, or from the Analyse tab.
+const WALK_MINUTES = [5, 10, 15], WALK_M_PER_MIN = 80;
+const SPEEDS = { lopen: { label: 'lopen', mPerMin: WALK_M_PER_MIN }, fietsen: { label: 'fietsen', mPerMin: 250 } };
+const walk = { speed: 'lopen' };
+const WALK_KEY = 'adresrapport.walk';
+const walkMinutes = m => Math.max(1, Math.round(m / WALK_M_PER_MIN));
+const walkLabels = [];
+try { $('walk-toggle').checked = localStorage.getItem(WALK_KEY) !== '0'; } catch {}
+
+function walkCircle(lon, lat, r) {
+  const kx = 111320 * Math.cos(lat * Math.PI / 180);
+  const ring = [];
+  for (let i = 0; i <= 96; i++) {
+    const a = i / 96 * Math.PI * 2;
+    ring.push([lon + Math.sin(a) * r / kx, lat + Math.cos(a) * r / 110574]);
+  }
+  return ring;
+}
+
+function updateWalkRings() {
+  for (const m of walkLabels.splice(0)) m.remove();
+  const section = $('amenities-section');
+  const fromAnalysis = $('walk-show').checked;
+  const show = !!current && (fromAnalysis || (!section.hidden && section.open && $('walk-toggle').checked));
+  // The report section always walks; the Analyse tab can switch to cycling.
+  const speed = fromAnalysis ? SPEEDS[walk.speed] : SPEEDS.lopen;
+  setLayerData('loopafstand', show ? WALK_MINUTES.map(min => ({ type: 'Feature', properties: { min },
+    geometry: { type: 'LineString', coordinates: walkCircle(current.lon, current.lat, min * speed.mPerMin) } })) : []);
+  if (!show) return;
+  for (const min of WALK_MINUTES) {
+    const el = document.createElement('div');
+    el.className = 'walk-label';
+    el.textContent = `${min} min ${speed.label}`;
+    walkLabels.push(new maplibregl.Marker({ element: el }).setLngLat([current.lon, current.lat + min * speed.mPerMin / 110574]).addTo(map));
+  }
+}
+
+$('walk-toggle').addEventListener('change', () => {
+  try { localStorage.setItem(WALK_KEY, $('walk-toggle').checked ? '1' : '0'); } catch {}
+  updateWalkRings();
+});

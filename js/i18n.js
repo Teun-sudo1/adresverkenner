@@ -126,8 +126,8 @@ const EN_TEXT = {
   'Water en regen': 'Water and rain', 'Zie hoe diep het water komt bij hevige regen of een overstroming, en of het nu regent bij het adres.':
     'See how deep the water gets in heavy rain or a flood, and whether it is raining at the address right now.',
   'Zie een hele gemeente groeien, van vóór 1800 tot nu, periode na periode.': 'Watch a whole municipality grow, from before 1800 until now, period by period.',
-  'Kleur panden op bouwjaar of gebruik, toon geluid, lucht of hitte, meet afstanden en deel de kaart.':
-    'Colour buildings by construction year or use, show noise, air or heat, measure distances and share the map.',
+  'Kleur panden op bouwjaar of gebruik, toon geluid, lucht of hitte, meet afstanden, analyseer een gebied en deel de kaart.':
+    'Colour buildings by construction year or use, show noise, air or heat, measure distances, analyse an area and share the map.',
   'Vergelijken en lijsten': 'Compare and lists', 'Zet twee adressen naast elkaar, of haal tot 200 adressen tegelijk op als CSV voor Excel.':
     'Put two addresses side by side, or fetch up to 200 addresses at once as a CSV for Excel.',
   'Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. Alle knoppen voor de kaart staan in de werkbalk linksboven; thema, taal en kwaliteit kun je later altijd wijzigen. De waterkaarten zijn modelscenario\'s: ze geven een indicatie, geen voorspelling voor een specifiek adres.':
@@ -155,8 +155,8 @@ const EN_TEXT = {
     'Sources: Climate Impact Atlas (flooding, subsidence, pile rot, heat) and RIVM Atlas Leefomgeving (noise, air quality). Values apply to the location or the neighbourhood, not to this building specifically.',
   'Bron: CBS Wijken en Buurten. Per kengetal het meest recente jaar met een gepubliceerde waarde; ontbrekende waarden zijn geheim of nog niet beschikbaar. Daaronder dezelfde waarde voor de hele gemeente en voor Nederland (CBS Kerncijfers wijken en buurten 2024).':
     'Source: CBS Wijken en Buurten. For each figure the most recent year with a published value; missing values are confidential or not yet available. Below each, the same value for the whole municipality and for the Netherlands (CBS key figures 2024).',
-  'Hemelsbrede afstand tot de dichtstbijzijnde, met het aantal in de buurt. Zolang dit blok open is, staan ze op de kaart. Bron: © OpenStreetMap-bijdragers (ODbL), via de kaarttegels van OpenFreeMap; niet alles is even volledig ingetekend.':
-    'Straight-line distance to the nearest one, with the number nearby. While this section is open, they are shown on the map. Source: © OpenStreetMap contributors (ODbL), via OpenFreeMap’s map tiles; not everything is mapped equally completely.',
+  'Hemelsbrede afstand tot de dichtstbijzijnde, met het aantal in de buurt. Loopminuten bij 4,8 km/u in een rechte lijn; via de straat is het meestal wat verder. Zolang dit blok open is, staan ze op de kaart. Bron: © OpenStreetMap-bijdragers (ODbL), via de kaarttegels van OpenFreeMap; niet alles is even volledig ingetekend.':
+    'Straight-line distance to the nearest one, with the number nearby. Walking minutes at 4.8 km/h in a straight line; via the streets it is usually a little further. While this section is open, they are shown on the map. Source: © OpenStreetMap contributors (ODbL), via OpenFreeMap’s map tiles; not everything is mapped equally completely.',
   'Indicatie uit de 3D BAG-dakvlakken (oriëntatie en helling), met ~950 kWh per kWp per jaar op een ideaal dak en panelen van 420 Wp (1,75 m²). Schaduw van bomen en buren en obstakels op het dak zijn niet meegerekend; bekijk schaduw met de knop Zon. Bij een pand met meerdere woningen gaat het om het hele dak.':
     'An indication from the 3D BAG roof planes (orientation and pitch), with ~950 kWh per kWp per year on an ideal roof and 420 Wp panels (1.75 m²). Shade from trees, neighbours and obstacles on the roof is not included; see shadows with the Sun button. For a building with several homes this is the whole roof.',
   'Toon de daken op de kaart (3D)': 'Show the roofs on the map (3D)', 'Geschikte dakvlakken': 'Suitable roof planes', 'Panelen': 'Panels',
@@ -175,7 +175,7 @@ const EN_TEXT = {
   'Stedelijk hitte-eiland': 'Urban heat island', 'Geluid en lucht': 'Noise and air', 'Geluid, alle bronnen': 'Noise, all sources',
   'Fijnstof PM2,5 (2024)': 'Particulate matter PM2.5 (2024)', 'droog': 'dry', 'droog binnen 15 m': 'dry within 15 m', 'verwaarloosbaar': 'negligible',
   'Supermarkt': 'Supermarket', 'Bus- of tramhalte': 'Bus or tram stop', 'Station (trein of metro)': 'Station (train or metro)', 'School': 'School',
-  'Apotheek': 'Pharmacy', 'Speeltuin': 'Playground', 'Park': 'Park', 'Laadpaal': 'Charging point', 'dit pand': 'this building',
+  'Apotheek': 'Pharmacy', 'Speeltuin': 'Playground', 'Park': 'Park', 'Laadpaal': 'Charging point', 'Sporthal of sportcentrum': 'Sports hall or centre', 'Zwembad': 'Swimming pool', 'Sportveld': 'Sports field', 'Loopafstand op de kaart (5, 10 en 15 minuten)': 'Walking distance on the map (5, 10 and 15 minutes)', 'dit pand': 'this building',
   'Adres ligt in 3 panden; bouwjaar van het eerste getoond.': 'The address lies in 3 buildings; the first one’s year is shown.',
   'onbekend': 'unknown', 'Dak': 'Roof', 'schuin': 'pitched', 'plat': 'flat', 'meerdere platte vlakken': 'several flat planes',
   // Map buttons and panels
@@ -208,7 +208,7 @@ const EN_TEXT = {
   'Draaien en kantelen': 'Rotate and tilt',
   'Draaien en kantelen. Sleep langs de rand om te draaien, in het midden omhoog of omlaag om te kantelen, tik voor het noorden boven. Pijltjestoetsen werken ook.':
     'Rotate and tilt. Drag along the edge to rotate, in the middle up or down to tilt, tap for north up. Arrow keys work too.',
-  'Rondvlucht om het adres': 'Fly around the address', 'Rondkijken stoppen': 'Stop looking around', 'Rondkijken stoppen (Esc)': 'Stop looking around (Esc)', 'Thema': 'Theme', 'Licht': 'Light', 'Donker': 'Dark', 'Uitzicht vanaf het dak': 'View from the roof', 'Stoppen': 'Stop',
+  'Rondvlucht om het adres': 'Fly around the address', 'Rondkijken stoppen': 'Stop looking around', 'Lagen': 'Layers', 'Gereedschap': 'Tools', 'Analyse': 'Analysis', 'Gebied analyseren': 'Analyse an area', 'Gebied': 'Area', 'Straal rond adres': 'Radius around address', 'Straal rond het adres': 'Radius around the address', 'Zelf tekenen': 'Draw an area', 'Klik punten op de kaart. Dubbelklik, of klik het eerste punt opnieuw, om het gebied te sluiten; Esc stopt.': 'Click points on the map. Double-click, or click the first point again, to close the area; Esc stops.', 'Analyseer gebied': 'Analyse area', 'Dichtheid als heatmap': 'Density as a heatmap', 'Bebouwingsdichtheid': 'Building density', 'Bouwjaar (mediaan per vak)': 'Construction year (median per cell)', 'Hoogte (gemiddeld per vak)': 'Height (average per cell)', 'Kleuren als bij Kleur panden op bouwjaar (tab Lagen).': 'Colours as in Colour buildings by construction year (Layers tab).', 'Loopafstand': 'Walking distance', 'Cirkels voor 5, 10 en 15 minuten': 'Circles for 5, 10 and 15 minutes', 'Snelheid': 'Speed', 'Lopen': 'Walk', 'Fietsen': 'Cycle', 'In een rechte lijn, lopen 4,8 km/u en fietsen 15 km/u; via de straat is het wat verder.': 'In a straight line, walking 4.8 km/h and cycling 15 km/h; via the streets it is a little further.', 'Oppervlakte gebied': 'Area size', 'Bouwjaar (mediaan)': 'Construction year (median)', 'Bouwperiode': 'Construction period', 'Gebied analyseren…': 'Analysing area…', 'Kies eerst een adres.': 'Choose an address first.', 'Heatmap berekenen…': 'Calculating heatmap…', 'Een gebied heeft minstens drie punten nodig. Kies Zelf tekenen om opnieuw te beginnen.': 'An area needs at least three points. Choose Draw an area to start again.', 'Let op: het gebied heeft heel veel panden; niet alle zijn meegeteld.': 'Note: the area has very many buildings; not all were counted.', 'Kleur panden, layers, meten, opslaan, delen en analyse': 'Colour buildings, layers, measure, save, share and analysis',  'Rondkijken stoppen (Esc)': 'Stop looking around (Esc)', 'Thema': 'Theme', 'Licht': 'Light', 'Donker': 'Dark', 'Uitzicht vanaf het dak': 'View from the roof', 'Stoppen': 'Stop',
   'Zoek eerst een adres voor een rondvlucht.': 'First search for an address to fly around.',
   'Zoek eerst een adres voor het uitzicht vanaf het dak.': 'First search for an address for the view from the roof.',
   // Rain
@@ -267,6 +267,8 @@ const EN_TEXT = {
 // Numbers are already in English notation (en-GB) when they reach the screen.
 const I18N_NUM = '([\\d.,]+)';
 const EN_PATTERNS = [
+  [`^Dit gebied is ${I18N_NUM} km²; analyseer maximaal ${I18N_NUM} km² tegelijk\\.$`, 'This area is $1 km²; analyse at most $2 km² at a time.'],
+  [`^${I18N_NUM} vakken van ${I18N_NUM} × ${I18N_NUM} m met panden, tot ${I18N_NUM} m van het adres\\.$`, '$1 cells of $2 × $3 m with buildings, up to $4 m from the address.'],
   [`^${I18N_NUM} jaar oud$`, '$1 years old'],
   [`^Zon ${I18N_NUM}° hoog, uit het `, 'Sun $1° high, from the '],
   ['from the noordoosten', 'from the northeast'], ['from the zuidoosten', 'from the southeast'], ['from the zuidwesten', 'from the southwest'],
@@ -319,7 +321,12 @@ const EN_PHRASES = [
   ['bomen', 'trees'], ['droog', 'dry'], ['1\\.000', '1,000'], ['10\\.000', '10,000'], ['herfst', 'autumn'], ['lente', 'spring'], ['zomer', 'summer'], ['winter \\(kaal\\)', 'winter (bare)'],
   ['dak schuin', 'pitched roof'], ['dak plat', 'flat roof'], ['m hoog', 'm tall'], ['verblijfsobjecten', 'units'], ['verblijfsobject', 'unit'],
   ['door dit pand', 'covered by this building'], ['bebouwd', 'built on'], ['inwoners', 'residents'], ['gemeente', 'municipality'],
+  ['bus- of tramhalte', 'bus or tram stop'], ['station \\(trein of metro\\)', 'station (train or metro)'], ['huisarts', 'GP'], ['apotheek', 'pharmacy'],
+  ['geen voorzieningen', 'no amenities'], ['min fietsen', 'min by bike'], ['Binnen', 'Within'], ['vóór', 'before'], ['vanaf', 'from'], ['mediaan', 'median'],
+  ['hoogste', 'highest'], ['van het gebied', 'of the area'], ['Analyse lukte niet', 'Analysis failed'], ['Heatmap niet beschikbaar', 'Heatmap not available'],
+  ['niet beschikbaar', 'not available'],
   ['supermarkt', 'supermarket'], ['halte', 'stop'], ['laadpaal', 'charging point'], ['speeltuin', 'playground'],
+  ['min lopen', 'min walk'], ['sporthal of sportcentrum', 'sports hall or centre'], ['zwembad', 'swimming pool'], ['sportveld', 'sports field'],
   ['binnen', 'within'], ['van panden', 'of buildings'], ['panden', 'buildings'], ['panelen', 'panels'], ['kWh per jaar', 'kWh per year'], ['per jaar', 'per year'],
   ['\\(nok', '(ridge'], ['t\\.o\\.v\\. NAP', 'relative to NAP (Amsterdam datum)'], ['Ja, nr\\.', 'Yes, no.'], ['ja, nr\\.', 'yes, no.'], ['nee', 'no'], ['Woonhuis', 'House'], ['Horeca', 'Hospitality'],
   ['Geen rijksmonument', 'Not a national monument'], ['Rijksmonument', 'National monument'], ['beschermd gezicht', 'protected townscape'], ['droog bij overstromingen', 'dry in floods'],

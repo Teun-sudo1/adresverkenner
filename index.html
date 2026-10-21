@@ -73,7 +73,7 @@
       <div class="tile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></svg>
         <h3>Lagen en gereedschap</h3>
-        <p>Kleur panden op bouwjaar of gebruik, toon geluid, lucht of hitte, meet afstanden en deel de kaart.</p>
+        <p>Kleur panden op bouwjaar of gebruik, toon geluid, lucht of hitte, meet afstanden, analyseer een gebied en deel de kaart.</p>
       </div>
       <div class="tile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 3v18"/></svg>
@@ -295,7 +295,8 @@
       <details class="section" data-key="voorzieningen" id="amenities-section" hidden>
         <summary><h2>Voorzieningen in de buurt</h2><span class="sum" id="sum-voorzieningen"></span></summary>
         <dl id="amenities"></dl>
-        <p class="note">Hemelsbrede afstand tot de dichtstbijzijnde, met het aantal in de buurt. Zolang dit blok open is, staan ze op de kaart. Bron: © OpenStreetMap-bijdragers (ODbL), via de kaarttegels van OpenFreeMap; niet alles is even volledig ingetekend.</p>
+        <label class="check walk-check"><input type="checkbox" id="walk-toggle" checked> Loopafstand op de kaart (5, 10 en 15 minuten)</label>
+        <p class="note">Hemelsbrede afstand tot de dichtstbijzijnde, met het aantal in de buurt. Loopminuten bij 4,8 km/u in een rechte lijn; via de straat is het meestal wat verder. Zolang dit blok open is, staan ze op de kaart. Bron: © OpenStreetMap-bijdragers (ODbL), via de kaarttegels van OpenFreeMap; niet alles is even volledig ingetekend.</p>
       </details>
 
       <details class="section" data-key="bouwjaren" id="years-section" hidden>
@@ -342,7 +343,7 @@
       </div>
       <div class="tb-group">
         <button type="button" id="groei-open" title="Groeikaart: zie een hele gemeente groeien, periode na periode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V12h4v9"/><path d="M10 21V7h4v14"/><path d="M15 21V3h4v18"/></svg><span class="lbl">Groeikaart</span></button>
-        <button type="button" id="controls-toggle" aria-expanded="false" aria-controls="drawer" title="Kleur panden, layers, meten, opslaan en delen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></svg><span class="lbl">Lagen en gereedschap</span></button>
+        <button type="button" id="controls-toggle" aria-expanded="false" aria-controls="drawer" title="Kleur panden, layers, meten, opslaan, delen en analyse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></svg><span class="lbl">Lagen en gereedschap</span></button>
       </div>
     </div>
     <!-- Map panels; on a phone they fold into one scrollable sheet behind "Lagen en gereedschap". -->
@@ -417,41 +418,92 @@
         </div>
         <aside id="drawer" class="mapctl glass" aria-label="Lagen en gereedschap">
           <div class="drawer-head"><h2>Lagen en gereedschap</h2><button type="button" id="drawer-close" class="icon-btn" aria-label="Sluiten" title="Sluiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
-          <section id="legend" class="drawer-sec">
-            <label for="color-by">Kleur panden op</label>
-            <select id="color-by">
-              <option value="bouwjaar">Bouwjaar</option>
-              <option value="status">Status</option>
-              <option value="functie">Gebruiksdoel</option>
-              <option value="zon">Zonnepotentie daken (3D)</option>
-              <option value="">Geen</option>
-            </select>
-            <ul id="legend-items"></ul>
-            <div class="hint" id="legend-filter-hint">Klik een categorie aan of uit om panden te filteren.</div>
-            <div class="hint" id="legend-hint">Zoom verder in om de panden te zien.</div>
-          </section>
-          <section id="envlayer" class="drawer-sec">
-            <label for="env-layer">Layers</label>
-            <select id="env-layer"><option value="">Geen</option></select>
-            <div id="env-legend" hidden>
-              <img id="env-legend-img" alt="">
-              <div id="env-source" class="hint"></div>
-            </div>
-          </section>
-          <section id="tools" class="drawer-sec">
-            <label>Meten</label>
-            <div class="seg" role="group" aria-label="Meten">
-              <button type="button" id="measure-dist" aria-pressed="false">Afstand</button>
-              <button type="button" id="measure-area" aria-pressed="false">Oppervlakte</button>
-            </div>
-            <div id="measure-panel" hidden>
-              <div id="measure-result"></div>
-              <div id="measure-hint" class="hint"></div>
-              <button type="button" class="link" id="measure-clear">Meting wissen</button>
-            </div>
-            <button type="button" id="save-image" class="full">Kaart opslaan als afbeelding</button>
-            <button type="button" id="share-link" class="full" title="De link onthoudt het adres en de weergave: kaarthoek, 3D, zon, water, layer en regen">Link naar deze weergave delen</button>
-          </section>
+          <div id="drawer-tabs" role="tablist" aria-label="Lagen en gereedschap">
+            <button type="button" role="tab" id="tab-lagen" data-tab="lagen" aria-controls="panel-lagen" aria-selected="true">Lagen</button>
+            <button type="button" role="tab" id="tab-gereedschap" data-tab="gereedschap" aria-controls="panel-gereedschap" aria-selected="false" tabindex="-1">Gereedschap</button>
+            <button type="button" role="tab" id="tab-analyse" data-tab="analyse" aria-controls="panel-analyse" aria-selected="false" tabindex="-1">Analyse</button>
+          </div>
+          <div id="panel-lagen" role="tabpanel" aria-labelledby="tab-lagen">
+            <section id="legend" class="drawer-sec">
+              <label for="color-by">Kleur panden op</label>
+              <select id="color-by">
+                <option value="bouwjaar">Bouwjaar</option>
+                <option value="status">Status</option>
+                <option value="functie">Gebruiksdoel</option>
+                <option value="zon">Zonnepotentie daken (3D)</option>
+                <option value="">Geen</option>
+              </select>
+              <ul id="legend-items"></ul>
+              <div class="hint" id="legend-filter-hint">Klik een categorie aan of uit om panden te filteren.</div>
+              <div class="hint" id="legend-hint">Zoom verder in om de panden te zien.</div>
+            </section>
+            <section id="envlayer" class="drawer-sec">
+              <label for="env-layer">Layers</label>
+              <select id="env-layer"><option value="">Geen</option></select>
+              <div id="env-legend" hidden>
+                <img id="env-legend-img" alt="">
+                <div id="env-source" class="hint"></div>
+              </div>
+            </section>
+          </div>
+          <div id="panel-gereedschap" role="tabpanel" aria-labelledby="tab-gereedschap" hidden>
+            <section id="tools" class="drawer-sec">
+              <label>Meten</label>
+              <div class="seg" role="group" aria-label="Meten">
+                <button type="button" id="measure-dist" aria-pressed="false">Afstand</button>
+                <button type="button" id="measure-area" aria-pressed="false">Oppervlakte</button>
+              </div>
+              <div id="measure-panel" hidden>
+                <div id="measure-result"></div>
+                <div id="measure-hint" class="hint"></div>
+                <button type="button" class="link" id="measure-clear">Meting wissen</button>
+              </div>
+              <button type="button" id="save-image" class="full">Kaart opslaan als afbeelding</button>
+              <button type="button" id="share-link" class="full" title="De link onthoudt het adres en de weergave: kaarthoek, 3D, zon, water, layer en regen">Link naar deze weergave delen</button>
+            </section>
+          </div>
+          <div id="panel-analyse" role="tabpanel" aria-labelledby="tab-analyse" hidden>
+            <section class="drawer-sec" id="area-sec">
+              <label>Gebied analyseren</label>
+              <div class="seg" role="group" aria-label="Gebied">
+                <button type="button" id="area-radius-mode" aria-pressed="true">Straal rond adres</button>
+                <button type="button" id="area-draw-mode" aria-pressed="false">Zelf tekenen</button>
+              </div>
+              <div class="row" id="area-radius-row">
+                <input type="range" id="area-radius" min="100" max="750" step="50" value="250" aria-label="Straal rond het adres">
+                <span id="area-radius-value">250 m</span>
+              </div>
+              <p class="hint" id="area-draw-hint" hidden>Klik punten op de kaart. Dubbelklik, of klik het eerste punt opnieuw, om het gebied te sluiten; Esc stopt.</p>
+              <button type="button" id="area-run" class="full">Analyseer gebied</button>
+              <p class="hint" id="area-status" role="status"></p>
+              <div id="area-result" aria-live="polite"></div>
+            </section>
+            <section class="drawer-sec" id="heat-sec">
+              <label for="heat-metric">Dichtheid als heatmap</label>
+              <select id="heat-metric">
+                <option value="">Uit</option>
+                <option value="dichtheid">Bebouwingsdichtheid</option>
+                <option value="bouwjaar">Bouwjaar (mediaan per vak)</option>
+                <option value="hoogte">Hoogte (gemiddeld per vak)</option>
+              </select>
+              <div id="heat-legend" hidden>
+                <div id="heat-ramp-wrap"><div class="ramp" id="heat-ramp"></div>
+                  <div class="ramp-labels"><span id="heat-lo"></span><span id="heat-hi"></span></div></div>
+                <p class="hint" id="heat-year-legend" hidden>Kleuren als bij Kleur panden op bouwjaar (tab Lagen).</p>
+              </div>
+              <p class="hint" id="heat-info"></p>
+            </section>
+            <section class="drawer-sec" id="walk-sec">
+              <label>Loopafstand</label>
+              <label class="check"><input type="checkbox" id="walk-show"> Cirkels voor 5, 10 en 15 minuten</label>
+              <div class="seg" role="group" aria-label="Snelheid">
+                <button type="button" id="walk-speed-lopen" aria-pressed="true">Lopen</button>
+                <button type="button" id="walk-speed-fietsen" aria-pressed="false">Fietsen</button>
+              </div>
+              <dl id="walk-counts"></dl>
+              <p class="hint">In een rechte lijn, lopen 4,8 km/u en fietsen 15 km/u; via de straat is het wat verder.</p>
+            </section>
+          </div>
         </aside>
       </div>
     </div>
@@ -478,6 +530,7 @@
 <script defer src="js/lights.js"></script>
 <script defer src="js/amenities.js"></script>
 <script defer src="js/tools.js"></script>
+<script defer src="js/analysis.js"></script>
 <script defer src="js/share.js"></script>
 <script defer src="js/camera.js"></script>
 <!-- Loaded on first use (see app.js): js/compare.js, js/growth.js -->

@@ -233,6 +233,51 @@ def test_welcome(b, r, base_url):
     r.check('welkom: voorbeeldadres laadt', loaded, b.js("document.getElementById('r-address').textContent"))
 
 
+def test_analysis(b, r, key):
+    """Analyse tab: figures for a radius and for a drawn area, the density grid and the walking/cycling rings."""
+    b.js("document.getElementById('controls-toggle').click(); document.getElementById('tab-analyse').click()")
+    b.js("map.jumpTo({center: [current.lon, current.lat], zoom: 16.5, pitch: 0, bearing: 0})")
+    rows = "Object.fromEntries([...document.querySelectorAll('#area-result dt')].map(dt => [dt.textContent, dt.nextElementSibling.textContent]))"
+    b.js("(() => { const s = document.getElementById('area-radius'); s.value = 250; s.dispatchEvent(new Event('input')); document.getElementById('area-run').click(); })()")
+    ok = b.wait_for("document.querySelectorAll('#area-result dt').length >= 5", 90)
+    res = b.js(rows) or {}
+    r.check(f'{key}: gebied analyseren (straal 250 m)', ok and res.get('Panden', 'geen') != 'geen' and 'Bouwjaar (mediaan)' in res,
+            ' · '.join(f'{k}: {v}' for k, v in list(res.items())[:5]))
+    # Draw a square around the middle of the map by clicking; close it on the first point.
+    before = b.js('addressId')
+    b.js("document.getElementById('area-draw-mode').click()")
+    left, top, w, h = b.js("(() => { const r = map.getCanvas().getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; })()")
+    cx, cy = left + w / 2, top + h / 2
+    for x, y in ((cx - 120, cy - 120), (cx + 120, cy - 120), (cx + 120, cy + 120), (cx - 120, cy + 120), (cx - 120, cy - 120)):
+        for t in ('mouseMoved', 'mousePressed', 'mouseReleased'):
+            b.send('Input.dispatchMouseEvent', {'type': t, 'x': x, 'y': y, 'button': 'left', 'clickCount': 1})
+        b.pump(0.4)
+    ok = b.wait_for("!analysis.drawing && document.querySelectorAll('#area-result dt').length >= 3", 90)
+    res = b.js(rows) or {}
+    r.check(f'{key}: zelf een gebied tekenen', ok and b.js('addressId') == before and 'Oppervlakte gebied' in res,
+            f"{res.get('Oppervlakte gebied')}, {res.get('Panden')}")
+    b.js("document.getElementById('area-radius-mode').click()")
+    # Heatmap: building density, then construction year.
+    for metric in ('dichtheid', 'bouwjaar'):
+        b.js(f"(() => {{ const s = document.getElementById('heat-metric'); s.value = '{metric}'; s.dispatchEvent(new Event('change')); }})()")
+        b.wait_for("/^[\\d.,]+ vakken/.test(document.getElementById('heat-info').textContent)", 90)
+        b.js("window.__cells = null; map.getSource('heatmap').getData().then(d => window.__cells = d.features.length)")
+        b.wait_for('window.__cells !== null', 5)
+        cells = b.js('window.__cells')
+        b.screenshot(f'{key}-heatmap-{metric}')
+        r.check(f'{key}: heatmap {metric}', (cells or 0) > 30, b.js("document.getElementById('heat-info').textContent"))
+    b.js("(() => { const s = document.getElementById('heat-metric'); s.value = ''; s.dispatchEvent(new Event('change')); })()")
+    # Walking rings with what lies within them, then cycling.
+    b.js("(() => { const c = document.getElementById('walk-show'); c.checked = true; c.dispatchEvent(new Event('change')); })()")
+    ok = b.wait_for("document.querySelectorAll('#walk-counts dt').length === 3 && document.querySelectorAll('.walk-label').length === 3", 60)
+    walk = b.js("document.querySelector('#walk-counts dd').textContent")
+    b.js("document.getElementById('walk-speed-fietsen').click()")
+    bike = b.wait_for("document.querySelector('.walk-label')?.textContent.includes('fietsen') && document.querySelector('#walk-counts dt').textContent.includes('fietsen')", 60)
+    r.check(f'{key}: loop- en fietsafstand in Analyse', ok and bike, walk)
+    b.js("document.getElementById('walk-speed-lopen').click(); (() => { const c = document.getElementById('walk-show'); c.checked = false; c.dispatchEvent(new Event('change')); })()")
+    b.js("document.getElementById('tab-lagen').click(); document.getElementById('controls-toggle').click()")
+
+
 def test_report(b, r, key):
     r.check(f'{key}: adres geladen', b.js("document.getElementById('r-address').textContent"))
     for section in ('heritage-section', 'years-section', 'env-section', 'cbs-section'):
@@ -249,7 +294,20 @@ def test_report(b, r, key):
     b.wait_for("!document.getElementById('amenities-section').hidden", 60)
     near = b.js("[...document.querySelectorAll('#amenities dd')].filter(d => d.dataset.v !== '–').length")
     summary = b.js("document.getElementById('sum-voorzieningen').textContent")
-    r.check(f'{key}: voorzieningen in de buurt', near >= 5, f'{near} van 9 soorten, {summary}')
+    kinds = b.js('AMENITIES.length')
+    sport = b.js("['sporthal', 'zwembad', 'sportveld'].filter(k => amenities.found.find(a => a.key === k)?.nearest).length")
+    r.check(f'{key}: voorzieningen in de buurt', near >= 5 and sport >= 1, f'{near} van {kinds} soorten, {sport} van 3 sport, {summary}')
+    # Opening the section shows the walking circles around the address, closing it removes them.
+    b.js("document.getElementById('amenities-section').open = true")
+    b.pump(1)
+    b.js("window.__rings = null; map.getSource('loopafstand').getData().then(d => window.__rings = d.features.length)")
+    b.wait_for('window.__rings !== null', 5)
+    rings = b.js('window.__rings')
+    labels = b.js("document.querySelectorAll('.walk-label').length")
+    b.js("document.getElementById('amenities-section').open = false")
+    b.pump(0.5)
+    gone = b.js("document.querySelectorAll('.walk-label').length")
+    r.check(f'{key}: loopafstand op de kaart', rings == 3 and labels == 3 and gone == 0, f'{rings} cirkels, {labels} labels')
     b.js("document.getElementById('toggle-sections').click()")
     r.check(f'{key}: alles openklappen', b.js("[...document.querySelectorAll('details.section')].every(d => d.open)"))
     b.js("document.getElementById('toggle-sections').click()")
@@ -516,6 +574,7 @@ def main():
                 test_water_rises(b, r, key, 'ov_kleine')
             if key == 'prinsengracht':
                 test_tools(b, r, key)
+                test_analysis(b, r, key)
                 test_growth(b, r, key)
             test_3d(b, r, key, with_night=(key == 'prinsengracht'))
             if key == 'damrak':

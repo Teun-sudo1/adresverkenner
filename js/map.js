@@ -66,6 +66,21 @@ const mapReady = new Promise(resolve => map.on('load', () => {
     paint: { 'line-color': '#e66100', 'line-width': 2, 'line-dasharray': [2, 1.5] } });
   map.addLayer({ id: 'pand-fill', type: 'fill', source: 'pand', paint: { 'fill-color': '#1a5fb4', 'fill-opacity': 0.3 } });
   map.addLayer({ id: 'pand-line', type: 'line', source: 'pand', paint: { 'line-color': '#1a5fb4', 'line-width': 3 } });
+  // Walking distance around the address (see amenities.js).
+  map.addSource('loopafstand', { type: 'geojson', data: emptyFC });
+  map.addLayer({ id: 'loopafstand', type: 'line', source: 'loopafstand',
+    paint: { 'line-color': '#0f766e', 'line-width': 2, 'line-opacity': 0.8, 'line-dasharray': [3, 2] } });
+  // Spatial analysis (see analysis.js): the density grid, the analysed area and the area being drawn.
+  map.addSource('heatmap', { type: 'geojson', data: emptyFC });
+  map.addLayer({ id: 'heatmap', type: 'fill', source: 'heatmap', paint: { 'fill-color': '#3182bd', 'fill-opacity': 0.68, 'fill-outline-color': 'rgba(0,0,0,0)' } });
+  map.addSource('analyse-gebied', { type: 'geojson', data: emptyFC });
+  map.addLayer({ id: 'analyse-gebied-fill', type: 'fill', source: 'analyse-gebied', paint: { 'fill-color': '#2160d8', 'fill-opacity': 0.08 } });
+  map.addLayer({ id: 'analyse-gebied-line', type: 'line', source: 'analyse-gebied', paint: { 'line-color': '#2160d8', 'line-width': 2.5 } });
+  map.addSource('analyse-tekenen', { type: 'geojson', data: emptyFC });
+  map.addLayer({ id: 'analyse-tekenen-line', type: 'line', source: 'analyse-tekenen', filter: ['==', ['geometry-type'], 'LineString'],
+    paint: { 'line-color': '#2160d8', 'line-width': 2, 'line-dasharray': [2, 1.5] } });
+  map.addLayer({ id: 'analyse-tekenen-punt', type: 'circle', source: 'analyse-tekenen', filter: ['==', ['geometry-type'], 'Point'],
+    paint: { 'circle-radius': 4.5, 'circle-color': '#fff', 'circle-stroke-color': '#2160d8', 'circle-stroke-width': 2 } });
   // Tree crowns at their estimated width: circle radius in pixels = metres / (metres per pixel).
   map.addSource('bomen', { type: 'geojson', data: emptyFC });
   map.addLayer({ id: 'bomen', type: 'circle', source: 'bomen', minzoom: 15,

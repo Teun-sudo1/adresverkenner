@@ -6,12 +6,13 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 
 ## Wat kun je ermee
 
-- **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS (naast gemeente en Nederland), voorzieningen in de buurt (OpenStreetMap), klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Elk onderwerp is een uitklapbaar blok met een samenvattende regel. Ook te printen als pdf.
+- **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS (naast gemeente en Nederland), voorzieningen in de buurt met loopminuten (OpenStreetMap, ook sporthal, zwembad en sportveld), klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Elk onderwerp is een uitklapbaar blok met een samenvattende regel. Ook te printen als pdf.
 - **3D:** de omgeving tot 750 m in 3D (de binnenste 250 m met dakvormen, filters en schaduw), bomen, straatlantaarns, grachten met bewegend water, een lucht die meekleurt met de zon, een rondvlucht van 10 seconden van nacht naar dag (of andersom) bij het eerste bezoek aan een adres in 3D, en het uitzicht vanaf het dak (oogknop bij het draairondje).
 - **Tijd in 3D:** kies datum en tijd; dag, schemering en nacht (met lucht, sterren, verlichte ramen en lantaarns) volgen die tijd.
 - **Zon en schaduw:** schaduwen op elk tijdstip, een zonuren-kaart per dag, nachtweergave met verlichte ramen, en bomen per seizoen.
 - **Water (knop Overstroming):** de hoogte van het maaiveld ten opzichte van NAP, hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
 - **Regen nu:** de live regenradar van de afgelopen 2 uur, of het nu regent bij het adres (dan valt er ook echt regen in beeld), en de verwachting voor de komende 2 uur per kwartier.
+- **Analyse (in Lagen en gereedschap):** cijfers voor een straal rond het adres of een zelf getekend gebied (panden, bouwjaren, gebruik, hoogte, bebouwd, bomen, monumenten, voorzieningen), een heatmap van bebouwingsdichtheid, bouwjaar of hoogte per vak van 50 × 50 m, en cirkels voor 5, 10 en 15 minuten lopen of fietsen met wat erbinnen ligt.
 - **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, layers (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
 - **Groeikaart:** een hele gemeente op een donkere kaart, waarop de panden per bouwperiode oplichten, van vóór 1800 tot nu, met per periode het aantal panden (3D BAG-kaartdienst, gefilterd op bouwjaar).
 - **Vergelijken en lijsten:** twee adressen naast elkaar, of een lijst van maximaal 200 adressen in één keer, te downloaden als CSV voor Excel.
@@ -55,6 +56,7 @@ python3 -m http.server 8000
 | `js/amenities.js` | Voorzieningen in de buurt uit OpenStreetMap, gelezen uit de vectortegels van OpenFreeMap met een eigen kleine decoder |
 | `js/lights.js` | Straatlantaarns uit de BGT: palen in 3D die 's nachts licht geven |
 | `js/tools.js` | Meten en kaart opslaan als afbeelding |
+| `js/analysis.js` | Tabs in Lagen en gereedschap, en de tab Analyse: gebied analyseren (straal of getekend), heatmap per vak, loop- en fietsafstand |
 | `js/camera.js` | Het draairondje rechtsboven (draaien, kantelen, noorden boven) de rondvlucht en het uitzicht vanaf het dak |
 | `js/share.js` | Deelbare links: de URL bewaart adres en weergave, en zet die terug bij openen |
 | `js/growth.js` | Groeikaart: aparte kaart per gemeente, panden per periode uit de 3D BAG-WMS, in de browser ingekleurd |

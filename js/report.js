@@ -110,7 +110,7 @@ async function loadEnvironment(x, y, stale) {
 map.on('click', async e => {
   // While measuring, clicks place points instead of looking up addresses;
   // while looking around from the roof, dragging mustn't jump to another address.
-  if (measure.mode || roofView.on) return;
+  if (measure.mode || roofView.on || analysis.drawing) return;
   setStatus('Adres zoeken bij klikpunt…');
   try {
     const { lng, lat } = e.lngLat;
@@ -483,6 +483,7 @@ async function loadAddress(lsId, { pushHistory = true, camera = null } = {}) {
     loadLights(current, stale);
     loadAmenities(current, stale);
     loadCanals(current, stale);
+    resetAnalysis();
     onRainPlaceChanged();
     if (is3D) loadTreeHeights(current).catch(err => console.error(err));
 
