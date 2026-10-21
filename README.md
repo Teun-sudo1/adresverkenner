@@ -7,7 +7,7 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 ## Wat kun je ermee
 
 - **Rapport per adres:** bouwjaar, oppervlakte, hoogte, dakvorm, perceel, monumentstatus, buurtcijfers van het CBS (naast gemeente en Nederland), voorzieningen in de buurt (OpenStreetMap), klimaat- en milieurisico's, en een schatting van de zonnepanelen-opbrengst. Elk onderwerp is een uitklapbaar blok met een samenvattende regel. Ook te printen als pdf.
-- **3D:** de omgeving tot 750 m in 3D (de binnenste 250 m met dakvormen, filters en schaduw), bomen, straatlantaarns, grachten met bewegend water, een lucht die meekleurt met de zon, en een rondvlucht van 10 seconden van nacht naar dag (of andersom) bij het eerste bezoek aan een adres in 3D.
+- **3D:** de omgeving tot 750 m in 3D (de binnenste 250 m met dakvormen, filters en schaduw), bomen, straatlantaarns, grachten met bewegend water, een lucht die meekleurt met de zon, een rondvlucht van 10 seconden van nacht naar dag (of andersom) bij het eerste bezoek aan een adres in 3D, en het uitzicht vanaf het dak (oogknop bij het draairondje).
 - **Tijd in 3D:** kies datum en tijd; dag, schemering en nacht (met lucht, sterren, verlichte ramen en lantaarns) volgen die tijd.
 - **Zon en schaduw:** schaduwen op elk tijdstip, een zonuren-kaart per dag, nachtweergave met verlichte ramen, en bomen per seizoen.
 - **Water (knop Overstroming):** de hoogte van het maaiveld ten opzichte van NAP, hevige regen en overstromingen (van eens per 10 tot eens per 10.000 jaar) die oplopen naar hun piek, met regendruppels.
@@ -15,7 +15,8 @@ Alles over een Nederlands adres op één kaart: het gebouw, de grond eronder, de
 - **Kaartlagen en filters:** panden kleuren op bouwjaar, status, gebruiksdoel of zonnepotentie, layers (geluid, lucht, hitte, groen), meten, en de kaart opslaan als afbeelding.
 - **Groeikaart:** een hele gemeente op een donkere kaart, waarop de panden per bouwperiode oplichten, van vóór 1800 tot nu, met per periode het aantal panden (3D BAG-kaartdienst, gefilterd op bouwjaar).
 - **Vergelijken en lijsten:** twee adressen naast elkaar, of een lijst van maximaal 200 adressen in één keer, te downloaden als CSV voor Excel.
-- **Overal bruikbaar:** licht en donker thema, telefoonweergave, deelbare links die ook de weergave onthouden (kaarthoek, 3D, zon, water, layer, regen), en een kwaliteitsstand die vanzelf naar Snel schakelt als de kaart hapert.
+- **Zoeken:** op adres, postcode, straat, plaats of gemeente, ook met volksnamen (Den Haag, Den Bosch) en Friese plaatsnamen.
+- **Overal bruikbaar:** Nederlands en Engels, licht en donker thema, telefoonweergave, deelbare links die ook de weergave onthouden (kaarthoek, 3D, zon, water, layer, regen), en een kwaliteitsstand die vanzelf naar Snel schakelt als de kaart hapert.
 
 ## Starten
 
@@ -32,10 +33,11 @@ python3 -m http.server 8000
 
 ## Opbouw
 
-`index.html` bevat alleen de pagina-opbouw. De scripts zijn gewone (geen module-)scripts die één globale scope delen, zodat openen vanaf schijf werkt: ES-modules worden op `file://` geblokkeerd. De laadvolgorde staat onderaan `index.html` en doet ertoe: code die tijdens het laden draait, mag alleen dingen uit eerdere bestanden gebruiken. Binnen functies (die later draaien) mag alles.
+`index.html` bevat alleen de pagina-opbouw. De scripts zijn gewone (geen module-)scripts die één globale scope delen, zodat openen vanaf schijf werkt: ES-modules worden op `file://` geblokkeerd. Alle scripts laden met `defer`; `compare.js` en `growth.js` worden pas opgehaald als je ze opent (`loadScript` in `app.js`). De laadvolgorde staat onderaan `index.html` en doet ertoe: code die tijdens het laden draait, mag alleen dingen uit eerdere bestanden gebruiken. Binnen functies (die later draaien) mag alles.
 
 | Bestand | Inhoud |
 |---|---|
+| `js/i18n.js` | Engelse versie: vertaalt de pagina en alles wat later verschijnt (MutationObserver); `nlText` geeft de Nederlandse tekst terug voor de samenvattingen |
 | `js/config.js` | Instellingen, bron-URL's, scenario's, de laadindicator (`track`), `fetchWithRetry` en de responscache (`cachedFetch`) |
 | `js/quality.js` | Kwaliteitsstand Mooi/Snel, de automatische overstap bij haperen, instellingenmenu en meldingen |
 | `js/map.js` | MapLibre-kaart, achtergrondlagen, basislagen en de hover-popup |
@@ -53,7 +55,7 @@ python3 -m http.server 8000
 | `js/amenities.js` | Voorzieningen in de buurt uit OpenStreetMap, gelezen uit de vectortegels van OpenFreeMap met een eigen kleine decoder |
 | `js/lights.js` | Straatlantaarns uit de BGT: palen in 3D die 's nachts licht geven |
 | `js/tools.js` | Meten en kaart opslaan als afbeelding |
-| `js/camera.js` | Het draairondje rechtsboven (draaien, kantelen, noorden boven) en de rondvlucht |
+| `js/camera.js` | Het draairondje rechtsboven (draaien, kantelen, noorden boven) de rondvlucht en het uitzicht vanaf het dak |
 | `js/share.js` | Deelbare links: de URL bewaart adres en weergave, en zet die terug bij openen |
 | `js/growth.js` | Groeikaart: aparte kaart per gemeente, panden per periode uit de 3D BAG-WMS, in de browser ingekleurd |
 | `js/compare.js` | Kerngegevens per adres zonder kaart (`keyFigures`), twee adressen vergelijken en de lijst met CSV-export |
@@ -111,7 +113,7 @@ Snel tekent op schermen met hoge resolutie met één pixel per CSS-pixel, laadt 
 
 ### Testen
 
-`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport en samenvattingen, watersimulatie via de knop Overstroming (loopt het water echt op?), 3D, zon en nacht, bomen en seizoenen, meten, layers, adresinfo verbergen, de deelbare link, vergelijken en de lijst met CSV, de knop Regen (radar, regen nu, verwachting) en Snel/Mooi. De test zet de kwaliteit vast op Mooi, omdat onzichtbaar Chrome met de processor tekent en anders vanzelf naar Snel zou schakelen. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
+`tests/smoke_test.py` start Chrome onzichtbaar en loopt de app door op drie testadressen: rapport en samenvattingen, watersimulatie via de knop Overstroming (loopt het water echt op?), 3D, zon en nacht, bomen en seizoenen, meten, layers, adresinfo verbergen, de deelbare link, vergelijken en de lijst met CSV, de knop Regen (radar, regen nu, verwachting) Snel/Mooi, het uitzicht vanaf het dak en de Engelse versie. De test zet de kwaliteit vast op Mooi, omdat onzichtbaar Chrome met de processor tekent en anders vanzelf naar Snel zou schakelen. Een fout in de console laat de test falen; een kortstondige storing bij een externe databron telt als waarschuwing. Screenshots komen in `tests/output/` (niet in git).
 
 ```sh
 pip install websocket-client
@@ -124,6 +126,8 @@ Een run duurt een paar minuten, omdat alle data live wordt opgehaald. De testadr
 - Prinsengracht 263, Amsterdam: rijksmonument, dakvormen, bomen, beschermd stadsgezicht.
 - Van Heukelomstraat 201, Rotterdam: diep in een polder, veel water in de scenario's.
 - Damrak 1, Amsterdam: dichte binnenstad, droog bij de meeste overstromingsscenario's.
+
+Elke ochtend om 07:17 draait GitHub Actions (`.github/workflows/dagelijkse-test.yml`) deze test tegen de live site, met één herkansing. Faalt hij, dan mailt GitHub de eigenaar van de repository. Handmatig starten kan via Actions → Dagelijkse test → Run workflow. GitHub zet geplande workflows stil na 60 dagen zonder activiteit in de repository.
 
 Safari is niet automatisch getest. Eerder bleek Safari strenger met het uitpakken van rasters; daarom gebruikt de app fflate in plaats van de ingebouwde `DecompressionStream`.
 

@@ -12,9 +12,14 @@
       document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     })();
   </script>
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
-  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+  <!-- Open the connections to the map and data services while the page loads. -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://service.pdok.nl">
+  <link rel="preconnect" href="https://api.pdok.nl">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+  <!-- All scripts are deferred: the page shows at once and they run in order once it's parsed. -->
+  <script defer src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -139,6 +144,11 @@
         <label><input type="radio" name="quality" value="snel"> Snel <span class="hint">(kleiner 3D-gebied, geen dakvormen, minder regen)</span></label>
       </fieldset>
       <p class="hint" id="quality-now"></p>
+      <fieldset>
+        <legend>Taal</legend>
+        <label translate="no"><input type="radio" name="lang" value="nl"> Nederlands</label>
+        <label translate="no"><input type="radio" name="lang" value="en"> English</label>
+      </fieldset>
     </div>
     <form id="search" autocomplete="off">
       <input id="q" type="search" placeholder="Bijv. Damrak 1 Amsterdam" required
@@ -285,6 +295,7 @@
   <div id="mapwrap">
     <div id="map"></div>
     <canvas id="stars" aria-hidden="true"></canvas>
+    <div id="roofview" class="mapctl" role="status" hidden><span id="roofview-text"></span><button type="button" id="roofview-stop">Stoppen</button></div>
     <canvas id="rain-canvas" aria-hidden="true"></canvas>
     <button type="button" id="panel-show" class="mapctl" aria-controls="panel">Adresinfo</button>
     <div id="layers" class="mapctl" role="group" aria-label="Achtergrondkaart">
@@ -416,27 +427,27 @@
 
 <!-- Classic scripts sharing one global scope, so the page also works opened
      straight from disk (file://), where ES modules are blocked. Order matters. -->
-<script src="js/config.js"></script>
-<script src="js/quality.js"></script>
-<script src="js/map.js"></script>
-<script src="js/buildings.js"></script>
-<script src="js/report.js"></script>
-<script src="js/tiff.js"></script>
-<script src="js/water.js"></script>
-<script src="js/livingwater.js"></script>
-<script src="js/rain.js"></script>
-<script src="js/solar.js"></script>
-<script src="js/sunhours.js"></script>
-<script src="js/layers.js"></script>
-<script src="js/weather.js"></script>
-<script src="js/trees.js"></script>
-<script src="js/lights.js"></script>
-<script src="js/amenities.js"></script>
-<script src="js/tools.js"></script>
-<script src="js/share.js"></script>
-<script src="js/camera.js"></script>
-<script src="js/compare.js"></script>
-<script src="js/growth.js"></script>
-<script src="js/app.js"></script>
+<script defer src="js/i18n.js"></script>
+<script defer src="js/config.js"></script>
+<script defer src="js/quality.js"></script>
+<script defer src="js/map.js"></script>
+<script defer src="js/buildings.js"></script>
+<script defer src="js/report.js"></script>
+<script defer src="js/tiff.js"></script>
+<script defer src="js/water.js"></script>
+<script defer src="js/livingwater.js"></script>
+<script defer src="js/rain.js"></script>
+<script defer src="js/solar.js"></script>
+<script defer src="js/sunhours.js"></script>
+<script defer src="js/layers.js"></script>
+<script defer src="js/weather.js"></script>
+<script defer src="js/trees.js"></script>
+<script defer src="js/lights.js"></script>
+<script defer src="js/amenities.js"></script>
+<script defer src="js/tools.js"></script>
+<script defer src="js/share.js"></script>
+<script defer src="js/camera.js"></script>
+<!-- Loaded on first use (see app.js): js/compare.js, js/growth.js -->
+<script defer src="js/app.js"></script>
 </body>
 </html>

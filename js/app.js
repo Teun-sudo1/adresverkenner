@@ -51,11 +51,11 @@ window.addEventListener('afterprint', () => {
 // The summaries read what the sections show, so they follow every loader
 // without each one having to report back.
 const shown = id => {
-  const t = $(id)?.textContent.trim();
+  const t = nlText($(id)).trim();
   return t && t !== '–' ? t : '';
 };
 // A value can carry its own short form (data-v), without the extra lines under it.
-const definitions = id => [...$(id).querySelectorAll('dt')].map(dt => [dt.textContent.trim(), (dt.nextElementSibling.dataset.v ?? dt.nextElementSibling.textContent).trim()]);
+const definitions = id => [...$(id).querySelectorAll('dt')].map(dt => [nlText(dt).trim(), (dt.nextElementSibling.dataset.v ?? nlText(dt.nextElementSibling)).trim()]);
 const withoutYear = t => t.replace(/\s*\(\d{4}\)$/, '');
 
 function summarize() {
@@ -177,6 +177,28 @@ $('welcome-start').addEventListener('click', closeWelcome);
 $('welcome').addEventListener('click', e => { if (e.target === $('welcome')) closeWelcome(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeWelcome(); });
 for (const b of document.querySelectorAll('#welcome [data-id]')) b.addEventListener('click', () => loadAddress(b.dataset.id));
+
+// ---------- Language ----------
+
+for (const r of document.querySelectorAll('input[name=lang]')) {
+  r.checked = r.value === LANG;
+  r.addEventListener('change', () => setLanguage(r.value));
+}
+
+// ---------- Modules loaded on first use ----------
+
+// The comparison, the address list and the Groeikaart load when first opened.
+const lazyScripts = {};
+function loadScript(src) {
+  lazyScripts[src] ??= new Promise((resolve, reject) => document.head.append(Object.assign(document.createElement('script'), {
+    src, onload: resolve,
+    onerror: () => { delete lazyScripts[src]; reject(new Error(`Onderdeel kon niet laden (${src}).`)); }
+  })));
+  return lazyScripts[src];
+}
+for (const [id, src, open] of [['open-compare', 'js/compare.js', 'openCompare'], ['open-bulk', 'js/compare.js', 'openBulk'], ['groei-open', 'js/growth.js', 'openGrowth']]) {
+  $(id).addEventListener('click', () => loadScript(src).then(() => window[open]()).catch(err => setStatus(err.message, true)));
+}
 
 // ---------- Deep links ----------
 

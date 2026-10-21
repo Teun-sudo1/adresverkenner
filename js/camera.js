@@ -104,6 +104,9 @@ class CameraControl {
           <circle class="hub" cx="24" cy="24" r="2.6"/>
         </svg>
       </button>
+      <button type="button" class="roof" title="Uitzicht vanaf het dak" aria-label="Uitzicht vanaf het dak">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/></svg>
+      </button>
       <button type="button" class="fly" title="Rondvlucht om het adres" aria-label="Rondvlucht om het adres">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2"/></svg>
       </button>`;
@@ -115,6 +118,7 @@ class CameraControl {
       if (!is3D) await set3D(true);
       flyAround();
     });
+    box.querySelector('.roof').addEventListener('click', () => (roofView.on ? stopRoofView() : startRoofView()));
     return box;
   }
   onRemove() { this.box.remove(); }
@@ -179,5 +183,94 @@ function setupDial(dial) {
   // A click without dragging (also Enter or Space on the keyboard) puts north up.
   dial.addEventListener('click', e => { if (e.detail === 0) map.easeTo({ bearing: 0 }); });
 }
+
+// ---------- View from the roof ----------
+
+// The camera stands on the ridge of the building at eye height and turns on
+// the spot: dragging looks around instead of moving the map. It starts with
+// a slow look around; any drag or key takes over.
+const EYE_HEIGHT = 1.7;
+const ROOF_LOOK_MS = 16000;
+const ROOF_HANDLERS = ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate', 'touchPitch', 'doubleClickZoom', 'keyboard', 'boxZoom'];
+const roofView = { on: false, saved: null, alt: 0, bearing: 0, pitch: 82, frame: 0, drag: null };
+
+function ridgeHeight() {
+  if (current.nok > 0) return current.nok;
+  // Without 3D BAG heights for the address: the tallest of its own buildings in the scene.
+  const own = sceneFeatures.filter(f => current.pandIds.includes(f.properties.identificatie)).map(f => f.properties.hoogte);
+  return own.length ? Math.max(...own) : 10;
+}
+
+function applyRoofView() {
+  // Roll must be given: left out, it comes back undefined and breaks the camera.
+  map.jumpTo(map.calculateCameraOptionsFromCameraLngLatAltRotation([current.lon, current.lat], roofView.alt, roofView.bearing, roofView.pitch, 0));
+}
+
+async function startRoofView() {
+  if (!current) { setStatus('Zoek eerst een adres voor het uitzicht vanaf het dak.'); return; }
+  stopFlight();
+  const ctx = current;
+  if (!is3D) await set3D(true);
+  await waitUntil(() => current !== ctx || (sceneFor === ctx && sceneFeatures.length > 0), 20000);
+  if (current !== ctx || !is3D || roofView.on) return;
+  roofView.saved = { center: map.getCenter(), zoom: map.getZoom(), bearing: map.getBearing(), pitch: map.getPitch() };
+  Object.assign(roofView, { on: true, alt: ridgeHeight() + EYE_HEIGHT, bearing: map.getBearing(), pitch: 82 });
+  for (const h of ROOF_HANDLERS) map[h].disable();
+  marker.getElement().hidden = true;
+  $('roofview-text').textContent = `Uitzicht vanaf het dak, ${nf.format(Math.round(roofView.alt))} m hoog. Sleep om rond te kijken.`;
+  $('roofview').hidden = false;
+  document.querySelector('.camera-ctrl .roof').setAttribute('aria-pressed', 'true');
+  applyRoofView();
+  if (reducedMotion.matches) return;
+  // One slow turn to start with.
+  const t0 = performance.now(), b0 = roofView.bearing;
+  const step = now => {
+    const t = Math.min(1, (now - t0) / ROOF_LOOK_MS);
+    roofView.bearing = b0 + 360 * easeInOut(t);
+    applyRoofView();
+    roofView.frame = t < 1 && roofView.on ? requestAnimationFrame(step) : 0;
+  };
+  roofView.frame = requestAnimationFrame(step);
+}
+
+function stopRoofView() {
+  if (!roofView.on) return;
+  cancelAnimationFrame(roofView.frame);
+  roofView.on = false;
+  for (const h of ROOF_HANDLERS) map[h].enable();
+  marker.getElement().hidden = false;
+  $('roofview').hidden = true;
+  document.querySelector('.camera-ctrl .roof').setAttribute('aria-pressed', 'false');
+  map.jumpTo(roofView.saved);
+}
+
+// Looking around: drag sideways to turn, up and down to look up or down.
+const roofCanvas = map.getCanvasContainer();
+roofCanvas.addEventListener('pointerdown', e => {
+  if (!roofView.on) return;
+  cancelAnimationFrame(roofView.frame);
+  roofView.drag = { x: e.clientX, y: e.clientY, bearing: roofView.bearing, pitch: roofView.pitch };
+  roofCanvas.setPointerCapture(e.pointerId);
+});
+roofCanvas.addEventListener('pointermove', e => {
+  const d = roofView.drag;
+  if (!roofView.on || !d) return;
+  roofView.bearing = d.bearing - (e.clientX - d.x) * 0.25;
+  roofView.pitch = Math.min(85, Math.max(45, d.pitch + (e.clientY - d.y) * 0.15));
+  applyRoofView();
+});
+for (const type of ['pointerup', 'pointercancel']) roofCanvas.addEventListener(type, () => { roofView.drag = null; });
+document.addEventListener('keydown', e => {
+  if (!roofView.on) return;
+  if (e.key === 'Escape') { stopRoofView(); return; }
+  const turn = { ArrowLeft: -10, ArrowRight: 10 }[e.key], look = { ArrowUp: 4, ArrowDown: -4 }[e.key];
+  if (!turn && !look) return;
+  cancelAnimationFrame(roofView.frame);
+  roofView.bearing += turn || 0;
+  roofView.pitch = Math.min(85, Math.max(45, roofView.pitch + (look || 0)));
+  applyRoofView();
+  e.preventDefault();
+});
+$('roofview-stop').addEventListener('click', stopRoofView);
 
 map.addControl(new CameraControl(), 'top-right');

@@ -35,7 +35,8 @@ button.secondary { background: var(--surface); color: var(--accent); border: 1px
 
 #suggestions { position: absolute; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 4px 0; list-style: none;
   background: var(--surface); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 6px 16px rgba(0,0,0,.12); z-index: 10; }
-#suggestions li { padding: 6px 10px; cursor: pointer; }
+#suggestions li { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 6px 10px; cursor: pointer; }
+#suggestions .kind { flex: none; font-size: 11px; color: var(--muted); }
 #suggestions li.active, #suggestions li:hover { background: var(--hover); }
 
 #status { margin: 12px 0; color: var(--muted); min-height: 1.4em; }
@@ -215,7 +216,7 @@ tr.current td { background: var(--current); font-weight: 600; }
 :root[data-theme="dark"] .maplibregl-ctrl-group button + button { border-top-color: var(--border); }
 :root[data-theme="dark"] .maplibregl-ctrl-group .maplibregl-ctrl-icon { filter: invert(1); }
 :root[data-theme="dark"] .dial .ring { fill: var(--surface); stroke: var(--border-strong); }
-:root[data-theme="dark"] .dial .hub, :root[data-theme="dark"] .camera-ctrl button.fly { fill: var(--text); color: var(--text); }
+:root[data-theme="dark"] .dial .hub, :root[data-theme="dark"] .camera-ctrl button.fly, :root[data-theme="dark"] .camera-ctrl button.roof { fill: var(--text); color: var(--text); }
 :root[data-theme="dark"] .maplibregl-ctrl-attrib, :root[data-theme="dark"] .maplibregl-ctrl-scale { background: rgba(31,36,48,.8); color: var(--muted); border-color: var(--muted); }
 :root[data-theme="dark"] .maplibregl-ctrl-attrib a { color: var(--muted); }
 
@@ -265,7 +266,11 @@ table.figures tbody th { font-weight: 400; color: var(--muted); }
 .camera-ctrl button.dial { width: 48px; height: 48px; padding: 0; border-radius: 50%; cursor: grab; touch-action: none; }
 .camera-ctrl button.dial:active { cursor: grabbing; }
 .camera-ctrl { border-radius: 24px !important; display: flex; flex-direction: column; align-items: center; }
-.camera-ctrl button.fly { width: 48px; height: 32px; display: flex; align-items: center; justify-content: center; color: #333; }
+.camera-ctrl button.fly, .camera-ctrl button.roof { width: 48px; height: 32px; display: flex; align-items: center; justify-content: center; color: #333; }
+.camera-ctrl button.roof[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+#roofview { bottom: calc(40px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; font-size: 13px; z-index: 6; max-width: calc(100% - 140px); }
+#roofview[hidden] { display: none; }
+#roofview button { flex: none; padding: 4px 10px; background: var(--accent); color: var(--accent-text); }
 .dial svg { width: 48px; height: 48px; display: block; }
 .dial .ring { fill: #fff; stroke: #c9ced6; stroke-width: 2; }
 .dial .ticks line { stroke: #9aa1ab; stroke-width: 1.5; }
@@ -275,7 +280,8 @@ table.figures tbody th { font-weight: 400; color: var(--muted); }
 .dial .hub { fill: #333; }
 @media (max-width: 700px) {
   .camera-ctrl button.dial, .dial svg { width: 56px; height: 56px; }
-  .camera-ctrl button.fly { width: 56px; height: 40px; }
+  .camera-ctrl button.fly, .camera-ctrl button.roof { width: 56px; height: 40px; }
+  #roofview { top: auto; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); max-width: calc(100% - 32px); }
 }
 /* Groeikaart: its own button on the map and a full-screen dark layer. */
 #groei-open { top: 10px; left: 164px; display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-weight: 600;

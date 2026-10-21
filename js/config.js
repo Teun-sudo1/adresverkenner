@@ -149,5 +149,5 @@ function updateLoadBar() {
   $('loadbar').hidden = pendingLoads === 0;
   $('loadbar').title = `Gegevens laden… (${pendingLoads} ${pendingLoads === 1 ? 'verzoek' : 'verzoeken'})`;
 }
-const nf = new Intl.NumberFormat('nl-NL');
-const nf1 = new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 1 });
+const nf = new Intl.NumberFormat(LOCALE);
+const nf1 = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });

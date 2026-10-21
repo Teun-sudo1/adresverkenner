@@ -120,7 +120,7 @@ const fmtFigure = (fig, v) => {
   if (v == null || v === '') return '–';
   if (typeof v !== 'number') return String(v);
   if (fig.plain) return v.toFixed(fig.dec ?? 0);
-  return new Intl.NumberFormat('nl-NL', { minimumFractionDigits: fig.dec ?? 0, maximumFractionDigits: fig.dec ?? 0 }).format(v);
+  return new Intl.NumberFormat(LOCALE, { minimumFractionDigits: fig.dec ?? 0, maximumFractionDigits: fig.dec ?? 0 }).format(v);
 };
 
 // ---------- Dialogs ----------
@@ -173,14 +173,15 @@ function attachSuggest(input, list) {
 attachSuggest($('cmp-a'), $('cmp-a-list'));
 attachSuggest($('cmp-b'), $('cmp-b-list'));
 
-$('open-compare').addEventListener('click', () => {
+// Opened from the link under the search box (loaded on first use, see app.js).
+function openCompare() {
   // Start from the address on screen.
   if (addressId && !$('cmp-a').value) {
     $('cmp-a').value = $('q').value;
     $('cmp-a').dataset.id = addressId;
   }
   openDialog('compare', $('cmp-a').value ? 'cmp-b' : 'cmp-a');
-});
+}
 
 let compareRun = 0;
 $('compare-form').addEventListener('submit', async e => {
@@ -247,7 +248,7 @@ const BULK_PARALLEL = 4;
 const BULK_PREVIEW = ['adres', 'bouwjaar', 'oppervlakte', 'gebruiksdoel', 'monument', 'water50', 'woz'];
 const bulk = { rows: [], run: 0 };
 
-$('open-bulk').addEventListener('click', () => openDialog('bulk', 'bulk-input'));
+function openBulk() { openDialog('bulk', 'bulk-input'); }
 
 function bulkLines() {
   return [...new Set($('bulk-input').value.split(/\r?\n/).map(l => l.replace(/[;\t]+/g, ' ').trim()).filter(Boolean))];

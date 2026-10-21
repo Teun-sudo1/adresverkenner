@@ -15,6 +15,7 @@ async function set3D(on) {
   $('view3d').setAttribute('aria-pressed', is3D);
   if (!is3D) {
     stopFlight();
+    stopRoofView();
     if (sun.on) toggleSun();
   }
   await mapReady;

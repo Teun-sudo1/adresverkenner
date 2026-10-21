@@ -563,8 +563,8 @@ async function loadWater() {
     const at = sc.kind === 'pluvial' ? 'Hevige regen' : 'Overstroming';
     setFloodInfo(`${at}: ${nf.format(Math.round(res.wetShare * 100))}% van het gebied tot ${WATER_RADIUS} m nat, max. ${nf1.format(res.max)} m diep. ` +
       (sc.kind === 'fluvial'
-        ? `Verfijnd met het AHN-hoogtemodel: 0,5 m tot ${WATER_RADIUS_DETAIL} m van het adres, 1 m daarbuiten.`
-        : `0,5 m detail tot ${WATER_RADIUS_DETAIL} m van het adres, 1 m daarbuiten.`));
+        ? `Verfijnd met het AHN-hoogtemodel: ${nf1.format(0.5)} m tot ${WATER_RADIUS_DETAIL} m van het adres, 1 m daarbuiten.`
+        : `${nf1.format(0.5)} m detail tot ${WATER_RADIUS_DETAIL} m van het adres, 1 m daarbuiten.`));
   } catch (err) {
     if (mine !== waterLoad) return;
     console.error(err);

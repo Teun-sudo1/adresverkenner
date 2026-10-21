@@ -18,6 +18,8 @@ async function loadHeight(pandId, stale) {
     setField('r-volume', a.b3_volume_lod22 != null ? `${nf.format(Math.round(a.b3_volume_lod22))} m³` : null);
     setField('r-maaiveld', `${nf1.format(a.b3_h_maaiveld)} m t.o.v. NAP`);
     current.maaiveld = a.b3_h_maaiveld;
+    // The ridge: the highest point of the roof, where the view from the roof starts.
+    current.nok = a.b3_h_dak_max - a.b3_h_maaiveld;
     updateFloodNap();
     // The same item carries the detailed roof planes for the solar estimate.
     const own = parseLod22({ metadata: item.metadata, features: [item.feature] }).find(([id]) => id === pandId);
@@ -242,6 +244,42 @@ function renderRecent() {
 
 // ---------- Autocomplete ----------
 
+// What people call a place versus its official name in the BAG, so that
+// "Den Haag" also finds 's-Gravenhage. Frisian names map to the Dutch ones
+// where the BAG uses those.
+const PLACE_ALIASES = {
+  'den haag': "'s-Gravenhage", 'the hague': "'s-Gravenhage", 'den bosch': "'s-Hertogenbosch",
+  'ljouwert': 'Leeuwarden', 'snits': 'Sneek', 'harns': 'Harlingen', 'frjentsjer': 'Franeker', 'boalsert': 'Bolsward',
+  'drylts': 'IJlst', 'sleat': 'Sloten', 'hylpen': 'Hindeloopen', 'starum': 'Stavoren', 'it hearrenfean': 'Heerenveen',
+  'de jouwer': 'Joure', 'grins': 'Groningen'
+};
+const PLACE_TYPES = { adres: '', weg: 'Straat', postcode: 'Postcode', woonplaats: 'Plaats', gemeente: 'Gemeente' };
+const SUGGEST_FQ = encodeURIComponent('type:(adres OR weg OR postcode OR woonplaats OR gemeente)');
+
+// The query with a colloquial name swapped for the official one, if it has one.
+function officialQuery(q) {
+  const lower = q.toLowerCase();
+  for (const [alias, official] of Object.entries(PLACE_ALIASES)) {
+    const at = lower.search(new RegExp(`(^|[\\s,])${alias.replace(/ /g, '\\s+')}($|[\\s,])`));
+    if (at >= 0 && official.toLowerCase() !== alias) return { query: q.slice(0, at) + q.slice(at).replace(new RegExp(alias.replace(/ /g, '\\s+'), 'i'), official), alias, official };
+  }
+  return null;
+}
+
+async function fetchSuggestions(q, rows, signal) {
+  const ask = query => getJSON(`${LOCATIESERVER}/suggest?q=${encodeURIComponent(query)}&fq=${SUGGEST_FQ}&rows=${rows}&fl=id,weergavenaam,type`, signal)
+    .then(d => d.response.docs);
+  const alt = officialQuery(q);
+  // With an alias, its official spelling goes first; the typed text may still match a street.
+  const lists = await Promise.all([alt ? ask(alt.query) : [], ask(q)]);
+  const seen = new Set();
+  return lists.flat().filter(d => !seen.has(d.id) && seen.add(d.id)).slice(0, rows)
+    // The colloquial name only next to the place itself, not every street in it.
+    .map(d => ({ ...d, alias: alt && (d.type === 'gemeente' || d.type === 'woonplaats') && d.weergavenaam.replace(/^Gemeente /, '').startsWith(alt.official) ? alt.alias : null }));
+}
+
+const suggestionLabel = s => s.weergavenaam.replace(/^Gemeente /, '') + (s.alias ? ` (${s.alias.replace(/\b\w/g, c => c.toUpperCase())})` : '');
+
 let suggestions = [];
 let activeIndex = -1;
 let suggestAbort;
@@ -252,7 +290,13 @@ function renderSuggestions() {
   ul.replaceChildren(...suggestions.map((s, i) => {
     const li = document.createElement('li');
     li.setAttribute('role', 'option');
-    li.textContent = s.weergavenaam;
+    li.append(suggestionLabel(s));
+    if (PLACE_TYPES[s.type]) {
+      const tag = document.createElement('span');
+      tag.className = 'kind';
+      tag.textContent = PLACE_TYPES[s.type];
+      li.append(tag);
+    }
     li.className = i === activeIndex ? 'active' : '';
     li.addEventListener('mousedown', e => { e.preventDefault(); pickSuggestion(i); });
     return li;
@@ -269,9 +313,27 @@ function closeSuggestions() {
 
 function pickSuggestion(i) {
   const s = suggestions[i];
-  $('q').value = s.weergavenaam;
+  $('q').value = suggestionLabel(s);
   closeSuggestions();
-  loadAddress(s.id);
+  if (s.type === 'adres') loadAddress(s.id);
+  else showPlace(s);
+}
+
+// A place, street or postcode: fly there and let the map do the rest.
+async function showPlace(s) {
+  closeWelcome();
+  try {
+    const doc = (await getJSON(`${LOCATIESERVER}/lookup?id=${encodeURIComponent(s.id)}&fl=type,weergavenaam,centroide_ll,geometrie_ll`)).response.docs[0];
+    if (!doc) { setStatus('Niet gevonden.', true); return; }
+    const nums = (doc.geometrie_ll || doc.centroide_ll).match(/-?\d+(\.\d+)?/g).map(Number);
+    const lons = nums.filter((_, k) => k % 2 === 0), lats = nums.filter((_, k) => k % 2 === 1);
+    const box = [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]];
+    if (box[0][0] === box[1][0]) map.flyTo({ center: box[0], zoom: 17 });
+    else map.fitBounds(box, { padding: 40, maxZoom: 17 });
+    setStatus(`Klik op de kaart om een adres te kiezen${doc.type === 'weg' ? ' in deze straat' : doc.type === 'postcode' ? ' bij deze postcode' : ''}.`);
+  } catch (err) {
+    setStatus(`Fout: ${err.message}`, true);
+  }
 }
 
 $('q').addEventListener('input', () => {
@@ -282,8 +344,7 @@ $('q').addEventListener('input', () => {
     suggestAbort?.abort();
     suggestAbort = new AbortController();
     try {
-      const data = await getJSON(`${LOCATIESERVER}/suggest?q=${encodeURIComponent(q)}&fq=type:adres&rows=8&fl=id,weergavenaam`, suggestAbort.signal);
-      suggestions = data.response.docs;
+      suggestions = await fetchSuggestions(q, 8, suggestAbort.signal);
       activeIndex = -1;
       renderSuggestions();
     } catch (err) {
@@ -301,6 +362,16 @@ $('q').addEventListener('keydown', e => {
 
 $('q').addEventListener('blur', () => setTimeout(closeSuggestions, 100));
 
+// Whether a suggested address is the one typed: "Spui 70 Den Haag" is Spui 70,
+// not Spui 70F. What follows the number may only be a place name.
+function matchesTyped(name, typed) {
+  const norm = t => t.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const street = norm(name.split(',')[0]), t = norm(typed);
+  if (!t.startsWith(street)) return false;
+  const rest = t.slice(street.length);
+  return rest === '' || /^[a-z]{3,}/.test(rest);
+}
+
 $('search').addEventListener('submit', async e => {
   e.preventDefault();
   if (activeIndex >= 0) { pickSuggestion(activeIndex); return; }
@@ -309,12 +380,16 @@ $('search').addEventListener('submit', async e => {
   closeSuggestions();
   setStatus('Zoeken…');
   try {
-    // /suggest ranks typed addresses far better than /free (e.g. "Amsteldijk 10"
-    // matches Amsteldijk 10, not 35D-10).
-    const data = await getJSON(`${LOCATIESERVER}/suggest?q=${encodeURIComponent(q)}&fq=type:adres&rows=1&fl=id`);
-    const id = data.response.docs[0]?.id;
-    if (!id) { setStatus('Geen adres gevonden.', true); return; }
-    loadAddress(id);
+    // An address first: /suggest ranks typed addresses far better than /free
+    // (e.g. "Amsteldijk 10" matches Amsteldijk 10, not 35D-10).
+    const alt = officialQuery(q);
+    const adres = (await getJSON(`${LOCATIESERVER}/suggest?q=${encodeURIComponent(alt ? alt.query : q)}&fq=type:adres&rows=5&fl=id,weergavenaam`)).response.docs;
+    const id = (adres.find(d => matchesTyped(d.weergavenaam, alt ? alt.query : q)) || adres[0])?.id;
+    // Only an address that matches what was typed; otherwise a place or street.
+    const best = (await fetchSuggestions(q, 1))[0];
+    if (best && best.type !== 'adres') { showPlace(best); return; }
+    if (id) { loadAddress(id); return; }
+    setStatus('Geen adres of plaats gevonden.', true);
   } catch (err) {
     setStatus(`Fout: ${err.message}`, true);
   }

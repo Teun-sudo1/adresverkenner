@@ -64,7 +64,9 @@ class Browser:
         self.proc = subprocess.Popen(
             [chrome, '--headless=new', f'--remote-debugging-port={PORT}', f'--user-data-dir={self.profile}',
              '--window-size=1400,900', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
-             '--no-first-run', '--no-default-browser-check', 'about:blank'],
+             '--no-first-run', '--no-default-browser-check',
+             # GitHub's Linux runners don't allow Chrome's sandbox.
+             *(['--no-sandbox'] if os.environ.get('CI') else []), 'about:blank'],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(100):
             try:
@@ -357,6 +359,30 @@ def test_growth(b, r, key):
     b.js("document.getElementById('groei-close').click()")
 
 
+def test_roof_view(b, r, key):
+    """View from the roof: the camera on the ridge, turning on the spot."""
+    b.js("document.querySelector('.camera-ctrl .roof').click()")
+    ok = b.wait_for('roofView.on', 90)
+    b.pump(2)
+    alt = b.js('roofView.alt')
+    b.screenshot(f'{key}-dak')
+    b.js("document.getElementById('roofview-stop').click()")
+    b.pump(1)
+    r.check(f'{key}: uitzicht vanaf het dak', ok and alt and alt > 5 and b.js('!roofView.on && map.dragPan.isEnabled()'), f'{alt and round(alt)} m hoog')
+
+
+def test_english(b, r, key, base_url):
+    """English: texts translated on screen, while the summaries still read the Dutch originals."""
+    b.js("localStorage.setItem('adresrapport.lang', 'en')")
+    ok = open_address(b, base_url, ADDRESSES[key][0])
+    b.pump(2)
+    shown = b.js("""[document.querySelector('#flood-toggle').textContent, document.querySelector('details[data-key=pand] h2').textContent,
+        document.getElementById('sum-erfgoed').textContent, document.getElementById('search').querySelector('button').textContent].join(' | ')""")
+    b.screenshot(f'{key}-english')
+    r.check(f'{key}: Engelse versie', ok and shown.startswith('Flood | Building | National monument') and shown.endswith('Search'), shown)
+    b.js("localStorage.removeItem('adresrapport.lang')")
+
+
 def test_share(b, r, key, base_url):
     """Sets a view, then opens the page's own URL fresh: the view must come back."""
     b.js("document.querySelector('#layers [data-layer=luchtfoto]').click()")
@@ -386,6 +412,7 @@ def test_share(b, r, key, base_url):
 
 def test_compare_bulk(b, r, key):
     b.js("document.getElementById('open-compare').click()")
+    b.wait_for("typeof keyFigures === 'function' && !document.getElementById('compare').hidden", 30)
     b.js("document.getElementById('cmp-b').value = 'Coolsingel 40 Rotterdam'")
     b.js("document.getElementById('compare-form').requestSubmit()")
     ok = b.wait_for("!document.getElementById('compare-result').hidden", 90)
@@ -394,6 +421,7 @@ def test_compare_bulk(b, r, key):
     r.check(f'{key}: twee adressen vergelijken', ok and rows > 15 and year == '1920', f'{rows} kenmerken, bouwjaar B {year}')
     b.js("document.querySelector('#compare .dialog-close').click()")
     b.js("document.getElementById('open-bulk').click()")
+    b.wait_for("!document.getElementById('bulk').hidden", 30)
     b.js("(() => { const t = document.getElementById('bulk-input'); t.value = 'Damrak 1 Amsterdam\\nxyzxyz nergens 99999\\nCoolsingel 40 Rotterdam'; t.dispatchEvent(new Event('input')); })()")
     b.js("document.getElementById('bulk-run').click()")
     ok = b.wait_for("!document.getElementById('bulk-download').hidden", 120)
@@ -430,6 +458,8 @@ def main():
                 test_growth(b, r, key)
             test_3d(b, r, key, with_night=(key == 'prinsengracht'))
             if key == 'damrak':
+                test_english(b, r, key, args.url)
+                test_roof_view(b, r, key)
                 test_share(b, r, key, args.url)
                 test_compare_bulk(b, r, key)
     except (websocket.WebSocketConnectionClosedException, ConnectionError) as err:

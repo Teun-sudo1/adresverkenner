@@ -66,7 +66,7 @@ function showRadarFrame(i) {
   radar.frames.forEach((_, k) => map.setPaintProperty(radarLayerId(k), 'raster-opacity', k === i ? 0.75 : 0));
   const f = radar.frames[i];
   if (!f) return;
-  const time = new Date(f.time * 1000).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  const time = new Date(f.time * 1000).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' });
   $('radar-time').textContent = i === radar.frames.length - 1 ? `${time} (laatste)` : time;
 }
 
@@ -124,7 +124,7 @@ async function updateRainNow() {
     if (!s || !radar.active) return;
     liveRain.level = s.level;
     liveRain.time = s.time;
-    const time = new Date(s.time * 1000).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+    const time = new Date(s.time * 1000).toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' });
     const where = current ? 'bij dit adres' : 'midden op de kaart';
     $('rain-now').textContent = s.level
       ? `Het regent ${where}: ${RAIN_LEVELS[s.level]} (radar ${time}).`

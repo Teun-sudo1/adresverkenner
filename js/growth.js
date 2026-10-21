@@ -323,6 +323,5 @@ function closeGrowth() {
   $('groei-open').focus();
 }
 
-$('groei-open').addEventListener('click', openGrowth);
 $('groei-close').addEventListener('click', closeGrowth);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGrowth(); });

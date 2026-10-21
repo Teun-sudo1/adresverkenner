@@ -1,0 +1,37 @@
+# Runs the smoke test against the live site every morning. When it fails,
+# GitHub emails the repository owner. A failed run is retried once after two
+# minutes, so a public data service that hiccups doesn't send a mail.
+name: Dagelijkse test
+
+on:
+  schedule:
+    # 05:17 UTC: 07:17 in Dutch summer time, 06:17 in winter time.
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install the test's one dependency
+        run: pip install websocket-client
+      - name: Test the live site (retry once)
+        run: |
+          python3 tests/smoke_test.py --url https://teun-sudo1.github.io/adresverkenner/ --chrome "$(command -v google-chrome)" \
+            || { echo "Eerste poging mislukt; over twee minuten opnieuw."; sleep 120; \
+                 python3 tests/smoke_test.py --url https://teun-sudo1.github.io/adresverkenner/ --chrome "$(command -v google-chrome)"; }
+      - name: Keep the screenshots of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: tests/output/
+          retention-days: 14

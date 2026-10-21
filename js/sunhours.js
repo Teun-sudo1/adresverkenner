@@ -88,7 +88,7 @@ async function computeSunHours() {
   sunHours.grid = grid;
   sunHours.max = grid.data.reduce((a, v) => (v > a ? v : a), 0);
   $('sunhours-max').textContent = `${nf1.format(sunHours.max)} uur`;
-  $('sunhours-info').textContent = `Uren zon op ${new Date(sunDate(720)).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}, rekening houdend met gebouwen en bomen. Beweeg over de kaart voor de waarde per plek.`;
+  $('sunhours-info').textContent = `Uren zon op ${new Date(sunDate(720)).toLocaleDateString(LOCALE, { day: 'numeric', month: 'long' })}, rekening houdend met gebouwen en bomen. Beweeg over de kaart voor de waarde per plek.`;
   drawSunHours();
 }
 
