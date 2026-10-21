@@ -166,7 +166,7 @@ class Results:
 def open_address(b, base_url, address_id):
     b.send('Page.navigate', {'url': f'{base_url}?id={address_id}'})
     ready = b.wait_for("typeof loadAddress === 'function' && typeof pendingLoads !== 'undefined' "
-                       "&& document.getElementById('r-hoogte').textContent !== '–'", 90)
+                       "&& !['', '–'].includes(document.getElementById('r-hoogte').textContent)", 90)
     # Let the slower sections (heritage, years, CBS, environment) arrive too.
     b.wait_for('pendingLoads === 0', 90)
     b.js("setTheme('light', true); localStorage.setItem('adresrapport.welcomeSeen', '1')")
@@ -182,6 +182,48 @@ def choose_scenario(b, value):
         b.js("document.getElementById('flood-toggle').click()")
     b.js(f"(() => {{ const s = document.getElementById('flood-scenario'); s.value = '{value}'; s.dispatchEvent(new Event('change')); }})()")
     return b.wait_for("(() => { const t = document.getElementById('flood-info').textContent; return !!water || (t && !t.endsWith('…')); })()", 120)
+
+
+def test_welcome(b, r, base_url):
+    """The welcome screen on a first visit must keep up with the app: every
+    toolbar function mentioned, its numbers matching the settings, fully
+    translated, and an example address that loads."""
+    b.send('Page.navigate', {'url': base_url})
+    ok = b.wait_for("typeof loadAddress === 'function' && !document.getElementById('welcome').hidden", 30)
+    b.pump(1)
+    b.screenshot('welkom')
+    r.check('welkom: verschijnt bij eerste bezoek, met de zoekbalk erin',
+            ok and b.js("document.getElementById('welcome-search-slot').contains(document.getElementById('q'))"))
+    # Each toolbar button (except the base maps) and the search extras need a mention.
+    missing = b.js("""(() => {
+      const text = document.getElementById('welcome').textContent.toLowerCase();
+      const names = [...document.querySelectorAll('#toolbar .tb-group:not(#layers) .lbl')].map(l => l.textContent.trim());
+      return [...names, 'Vergelijk', 'lijst'].filter(n => !text.includes(n.toLowerCase()));
+    })()""")
+    r.check('welkom: noemt elke knop van de werkbalk', ok and not missing, f"ontbreekt: {', '.join(missing)}" if missing else '')
+    b.js("loadScript('js/compare.js')")
+    b.wait_for("typeof BULK_MAX !== 'undefined'", 20)
+    numbers = b.js("""(() => {
+      const text = document.getElementById('welcome').textContent;
+      return [`${SCENE_RADIUS_OUTER} m`, `${BULK_MAX} adressen`].filter(n => !text.includes(n));
+    })()""")
+    r.check('welkom: getallen kloppen met de instellingen', ok and not numbers, f"niet gevonden: {', '.join(numbers)}" if numbers else '3D-gebied en lijstmaximum')
+    # In English nothing may stay Dutch (addresses and the brand name excepted).
+    b.js("localStorage.setItem('adresrapport.lang', 'en')")
+    b.send('Page.navigate', {'url': base_url})
+    b.wait_for("typeof loadAddress === 'function' && !document.getElementById('welcome').hidden", 30)
+    b.pump(1)
+    dutch = b.js("""[...document.querySelectorAll('#welcome h2, #welcome h3, #welcome p, #welcome button:not([data-id])')]
+      .filter(el => /[a-z]{3}/i.test(el.textContent) && el.textContent.trim() === nlText(el).trim() && !/^Adresverkenner$/.test(el.textContent.trim()))
+      .map(el => el.textContent.trim().slice(0, 40))""")
+    r.check('welkom: helemaal vertaald in het Engels', not dutch, '; '.join(dutch))
+    b.js("localStorage.removeItem('adresrapport.lang')")
+    b.send('Page.navigate', {'url': base_url})
+    b.wait_for("typeof loadAddress === 'function' && !document.getElementById('welcome').hidden", 30)
+    b.js("document.querySelector('#welcome [data-id]').click()")
+    loaded = b.wait_for("document.getElementById('welcome').hidden && !document.getElementById('result').hidden "
+                        "&& document.getElementById('r-address').textContent !== ''", 30)
+    r.check('welkom: voorbeeldadres laadt', loaded, b.js("document.getElementById('r-address').textContent"))
 
 
 def test_report(b, r, key):
@@ -204,16 +246,16 @@ def test_report(b, r, key):
     b.js("document.getElementById('toggle-sections').click()")
     r.check(f'{key}: alles openklappen', b.js("[...document.querySelectorAll('details.section')].every(d => d.open)"))
     b.js("document.getElementById('toggle-sections').click()")
-    # The address info can be put away and brought back.
+    # The address info folds aside (it slides, so wait for it) and comes back with the tab on the map's edge.
     width = b.js("document.getElementById('map').clientWidth")
     b.js("document.getElementById('panel-hide').click()")
-    b.pump(0.5)
-    hidden = b.js("getComputedStyle(document.getElementById('panel')).display === 'none'")
+    b.pump(0.8)
+    hidden = b.js("document.getElementById('panel').inert && document.getElementById('panel').getBoundingClientRect().right <= 1")
     wider = b.js("document.getElementById('map').clientWidth")
-    b.js("document.getElementById('panel-show').click()")
-    b.pump(0.5)
-    r.check(f'{key}: adresinfo wegklikken en terughalen',
-            hidden and wider > width and b.js("getComputedStyle(document.getElementById('panel')).display !== 'none'"), f'kaart {width} → {wider} px')
+    b.js("document.getElementById('panel-toggle').click()")
+    b.pump(0.8)
+    r.check(f'{key}: adresinfo inklappen en uitklappen',
+            hidden and wider > width and b.js("!document.getElementById('panel').inert && document.getElementById('panel').getBoundingClientRect().left === 0"), f'kaart {width} → {wider} px')
 
 
 def test_water_rises(b, r, key, scenario):
@@ -443,6 +485,8 @@ def main():
     b = Browser(args.chrome)
     r = Results()
     try:
+        print('\nWelkomstscherm', flush=True)
+        test_welcome(b, r, args.url)
         for key, (address_id, label) in ADDRESSES.items():
             print(f'\n{label}', flush=True)
             if not r.check(f'{key}: rapport geladen', open_address(b, args.url, address_id)):

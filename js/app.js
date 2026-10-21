@@ -108,13 +108,23 @@ new MutationObserver(() => {
 
 // The whole sidebar (or the phone drawer) can be put away for a clear map;
 // the Adresinfo button on the map brings it back.
-function setPanelHidden(hidden) {
+// On a computer the sidebar slides aside and a tab on the map's edge brings it
+// back; it stays as you left it.
+const PANEL_KEY = 'adresrapport.panelHidden';
+const wide = matchMedia('(min-width: 701px)');
+function setPanelHidden(hidden, { focus = true } = {}) {
   document.body.classList.toggle('panel-hidden', hidden);
-  $('panel-show').setAttribute('aria-expanded', !hidden);
-  (hidden ? $('panel-show') : $('panel-hide')).focus();
+  // Out of the tab order while it's away.
+  $('panel').inert = hidden;
+  for (const id of ['panel-show', 'panel-toggle']) $(id).setAttribute('aria-expanded', !hidden);
+  $('panel-toggle').setAttribute('aria-label', hidden ? 'Adresinfo uitklappen' : 'Adresinfo inklappen');
+  if (wide.matches) try { localStorage.setItem(PANEL_KEY, hidden ? '1' : ''); } catch {}
+  if (focus) (hidden ? $(wide.matches ? 'panel-toggle' : 'panel-show') : $('panel-hide')).focus();
 }
 $('panel-hide').addEventListener('click', () => setPanelHidden(true));
 $('panel-show').addEventListener('click', () => setPanelHidden(false));
+$('panel-toggle').addEventListener('click', () => setPanelHidden(!document.body.classList.contains('panel-hidden')));
+try { if (wide.matches && localStorage.getItem(PANEL_KEY)) setPanelHidden(true, { focus: false }); } catch {}
 
 // ---------- Phone layout ----------
 
@@ -140,12 +150,28 @@ function updatePhoneCards(opened) {
   document.body.classList.toggle('show-cards', radar.active || floodPanel.open || (sun.on && is3D));
   if (opened && phone.matches) setPanelState(0);
 }
-$('controls-toggle').addEventListener('click', () => {
-  const open = document.body.classList.toggle('controls-open');
+// "Lagen en gereedschap": a drawer on the right of the map, or on a phone the
+// sheet with all map panels. On a computer it stays as you left it.
+const DRAWER_KEY = 'adresrapport.drawer';
+function setControlsOpen(open) {
+  document.body.classList.toggle('controls-open', open);
   $('controls-toggle').setAttribute('aria-expanded', open);
-  // Make room for the controls sheet.
-  if (open && phone.matches) setPanelState(0);
+  if (phone.matches) {
+    // Make room for the controls sheet.
+    if (open) setPanelState(0);
+  } else {
+    try { localStorage.setItem(DRAWER_KEY, open ? '1' : ''); } catch {}
+  }
+}
+$('controls-toggle').addEventListener('click', () => setControlsOpen(!document.body.classList.contains('controls-open')));
+$('drawer-close').addEventListener('click', () => { setControlsOpen(false); $('controls-toggle').focus(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('controls-open') && $('drawer').contains(document.activeElement)) {
+    setControlsOpen(false);
+    $('controls-toggle').focus();
+  }
 });
+try { if (!phone.matches && localStorage.getItem(DRAWER_KEY)) setControlsOpen(true); } catch {}
 
 // ---------- Welcome ----------
 

@@ -96,7 +96,7 @@ const EN_TEXT = {
   // Page, title bar and settings
   'Uitleg': 'About', 'Donkere modus': 'Dark mode', 'Lichte modus': 'Light mode', 'Donker / licht': 'Dark / light',
   'Instellingen': 'Settings', 'Print / PDF': 'Print / PDF', 'Printen of opslaan als pdf': 'Print or save as PDF',
-  'Adresinfo verbergen': 'Hide address info', 'Adresinfo': 'Address info', 'Rapport in- of uitklappen': 'Expand or collapse the report',
+  'Adresinfo verbergen': 'Hide address info', 'Adresinfo inklappen': 'Collapse address info', 'Adresinfo uitklappen': 'Expand address info', 'Adresinfo in- of uitklappen': 'Collapse or expand address info', 'Adresinfo': 'Address info', 'Rapport in- of uitklappen': 'Expand or collapse the report',
   'Kwaliteit van de kaart': 'Map quality', 'Automatisch': 'Automatic', 'Mooi': 'Detailed', 'Snel': 'Fast',
   '(Mooi, en Snel als het hapert)': '(Detailed, and Fast when it stutters)',
   '(kleiner 3D-gebied, geen dakvormen, minder regen)': '(smaller 3D area, no roof shapes, less rain)',
@@ -118,15 +118,20 @@ const EN_TEXT = {
   'Alles over een Nederlands adres op één plek: het gebouw, de grond eronder, de buurt en wat er gebeurt bij hevige regen of een overstroming. Gemaakt met open data van onder meer het Kadaster, het CBS en de Klimaateffectatlas.':
     'Everything about a Dutch address in one place: the building, the ground beneath it, the neighbourhood and what happens in heavy rain or a flood. Made with open data from the Kadaster, Statistics Netherlands (CBS) and the Climate Impact Atlas, among others.',
   'Of probeer:': 'Or try:', 'Naar de kaart': 'To the map', 'Sluiten': 'Close',
-  'Rapport per adres': 'Report per address', 'Bouwjaar, oppervlakte, hoogte, perceel en buurtcijfers van het CBS. Ook te printen als pdf.':
-    'Construction year, floor area, height, parcel and neighbourhood figures from Statistics Netherlands. Can be printed as PDF.',
-  'Bekijk de omgeving tot 250 m in 3D, met echte dakvormen dichtbij en bomen.': 'See the surroundings up to 250 m in 3D, with real roof shapes nearby and trees.',
-  'Kleuren en filteren': 'Colour and filter', 'Kleur panden op bouwjaar, status of gebruiksdoel en verberg wat je niet wilt zien.':
-    'Colour buildings by construction year, status or use and hide what you don’t want to see.',
-  'Water simuleren': 'Simulate water', 'Zie hoe diep het water komt bij hevige regen of een overstroming, en laat het stijgen.':
-    'See how deep the water gets in heavy rain or a flood, and let it rise.',
-  'Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. De waterkaarten zijn modelscenario\'s: ze geven een indicatie, geen voorspelling voor een specifiek adres.':
-    'Tip: you can also just click the map to fetch the nearest address. The water maps are model scenarios: they give an indication, not a forecast for a specific address.',
+  'Rapport per adres': 'Report per address',
+  'Bouwjaar, oppervlakte, hoogte, perceel, monumenten, klimaatrisico\'s, voorzieningen en buurtcijfers van het CBS. Ook te printen als pdf.':
+    'Construction year, floor area, height, parcel, monuments, climate risks, amenities and neighbourhood figures from Statistics Netherlands. Can be printed as PDF.',
+  '3D, dag en nacht': '3D, day and night', 'De omgeving tot 750 m in 3D met dakvormen, bomen en lantaarns. Kies een tijd voor zon en schaduw, of kijk vanaf het dak.':
+    'The surroundings up to 750 m in 3D with roof shapes, trees and street lights. Pick a time for sun and shadow, or look out from the roof.',
+  'Water en regen': 'Water and rain', 'Zie hoe diep het water komt bij hevige regen of een overstroming, en of het nu regent bij het adres.':
+    'See how deep the water gets in heavy rain or a flood, and whether it is raining at the address right now.',
+  'Zie een hele gemeente groeien, van vóór 1800 tot nu, periode na periode.': 'Watch a whole municipality grow, from before 1800 until now, period by period.',
+  'Kleur panden op bouwjaar of gebruik, toon geluid, lucht of hitte, meet afstanden en deel de kaart.':
+    'Colour buildings by construction year or use, show noise, air or heat, measure distances and share the map.',
+  'Vergelijken en lijsten': 'Compare and lists', 'Zet twee adressen naast elkaar, of haal tot 200 adressen tegelijk op als CSV voor Excel.':
+    'Put two addresses side by side, or fetch up to 200 addresses at once as a CSV for Excel.',
+  'Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. Alle knoppen voor de kaart staan in de werkbalk linksboven; de taal (English) kies je bij Instellingen. De waterkaarten zijn modelscenario\'s: ze geven een indicatie, geen voorspelling voor een specifiek adres.':
+    'Tip: you can also just click the map to fetch the nearest address. All map buttons are in the toolbar at the top left; choose the language (Nederlands) under Settings. The water maps are model scenarios: they give an indication, not a forecast for a specific address.',
   // Report
   'Alles openklappen': 'Expand all', 'Alles dichtklappen': 'Collapse all',
   'Bouwjaar': 'Construction year', 'Oppervlakte': 'Floor area', 'dit verblijfsobject': 'this unit',
@@ -175,7 +180,8 @@ const EN_TEXT = {
   'onbekend': 'unknown', 'Dak': 'Roof', 'schuin': 'pitched', 'plat': 'flat', 'meerdere platte vlakken': 'several flat planes',
   // Map buttons and panels
   'Kaart': 'Map', 'Luchtfoto': 'Aerial photo', 'Achtergrondkaart': 'Base map', 'Weergave': 'View', 'Zon': 'Sun', 'Regen': 'Rain',
-  'Overstroming': 'Flood', 'Opties': 'Options', 'Groeikaart': 'Growth map',
+  'Overstroming': 'Flood', 'Groeikaart': 'Growth map', 'Lagen en gereedschap': 'Layers and tools', 'Kaart en weergave': 'Map and view',
+  'Kleur panden, layers, meten, opslaan en delen': 'Colour buildings, layers, measure, save and share',
   'Toon panden in 3D rond het adres': 'Show buildings around the address in 3D', 'Schaduwen en zonuren (zet 3D aan)': 'Shadows and sun hours (turns on 3D)',
   'Live regenradar, regen nu en de komende 2 uur': 'Live rain radar, rain now and the next 2 hours',
   'Overstroming of hevige regen simuleren rond het adres': 'Simulate a flood or heavy rain around the address',

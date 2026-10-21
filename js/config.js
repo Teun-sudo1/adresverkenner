@@ -145,8 +145,13 @@ setTimeout(async () => {
   }
 }, 5000);
 
+let settleTimer = 0;
 function updateLoadBar() {
   $('loadbar').hidden = pendingLoads === 0;
+  // A loader often starts its next request right after the previous one, so
+  // wait a moment before deciding that everything is in.
+  clearTimeout(settleTimer);
+  if (pendingLoads === 0) settleTimer = setTimeout(() => { if (pendingLoads === 0) settleSkeletons(); }, 500);
   $('loadbar').title = `Gegevens laden… (${pendingLoads} ${pendingLoads === 1 ? 'verzoek' : 'verzoeken'})`;
 }
 const nf = new Intl.NumberFormat(LOCALE);

@@ -56,6 +56,7 @@ async function openSharedLink(params) {
   const tijd = (params.get('tijd') || params.get('zon'))?.split(',');
   const timeOk = tijd && /^\d{4}-\d\d-\d\d$/.test(tijd[0]) && Number(tijd[1]) >= 0 && Number(tijd[1]) < 1440;
   const sunOk = !!params.get('zon');
+  let loaded;
   applyingView = true;
   try {
     await mapReady;
@@ -73,17 +74,19 @@ async function openSharedLink(params) {
       setFloodPanel(true);
       chooseOption('flood-scenario', water);
     }
-    const loaded = loadAddress(id, { pushHistory: false, camera });
+    loaded = loadAddress(id, { pushHistory: false, camera });
     if (params.get('3d') === '1' || sunOk) {
       await set3D(true);
       if (sunOk && !sun.on) toggleSun();
     }
     if (camera) map.jumpTo(camera);
     if (params.get('regen') === '1' && !radar.active) $('rain-live-toggle').click();
-    await loaded;
   } finally {
+    // Only applying the view holds the URL back, not the data loading after it:
+    // one slow data service mustn't stop the link from following the view.
     applyingView = false;
   }
+  await loaded;
 }
 
 // ---------- Copy the link ----------

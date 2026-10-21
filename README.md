@@ -60,7 +60,7 @@ python3 -m http.server 8000
 | `js/growth.js` | Groeikaart: aparte kaart per gemeente, panden per periode uit de 3D BAG-WMS, in de browser ingekleurd |
 | `js/compare.js` | Kerngegevens per adres zonder kaart (`keyFigures`), twee adressen vergelijken en de lijst met CSV-export |
 | `js/app.js` | Uitklapbare rapportblokken met samenvattingen, print, telefoonweergave, welkomstscherm en opstart |
-| `css/app.css` | Alle opmaak, met kleurvariabelen voor licht en donker |
+| `css/app.css` | Alle opmaak: kleur- en lettergroottevariabelen (licht en donker, één typeschaal), de werkbalk op de kaart, het paneel Lagen en gereedschap linksonder, laadplaceholders en overgangen |
 
 ### De water-worker
 
@@ -89,7 +89,7 @@ Alle bronnen worden direct vanuit de browser opgevraagd en moeten dus CORS toest
 | RainViewer (API en tegels) | Live regenradar, afgelopen 2 uur in stappen van 10 minuten; regen nu bij het adres | `weather.js` |
 | Open-Meteo (KNMI-model) | Neerslagverwachting komende 2 uur per kwartier | `weather.js` |
 
-Bibliotheken (vastgepinde versies van CDN): MapLibre GL 5.24.0, fflate 0.8.2, d3-array 3.2.4 en d3-contour 4.0.2 (alleen in de worker), three.js 0.160.0 (pas geladen bij 3D).
+Bibliotheken (vastgepinde versies van CDN): MapLibre GL 5.24.0, fflate 0.8.2, d3-array 3.2.4 en d3-contour 4.0.2 (alleen in de worker), three.js 0.160.0 (pas geladen bij 3D). Lettertype: Inter (Fontsource 5.2.8, via jsDelivr).
 
 ## Onderhoud
 

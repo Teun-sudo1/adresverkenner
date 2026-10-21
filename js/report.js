@@ -170,7 +170,21 @@ function setStatus(msg, isError = false) {
 }
 
 function setField(id, value) {
+  $(id).classList.remove('skel');
   $(id).textContent = value ?? '–';
+}
+
+// While an address loads, its values show as grey placeholder bars. Whatever
+// is still empty once all requests are done gets the usual dash.
+function setLoading(id) {
+  $(id).textContent = '';
+  $(id).classList.add('skel');
+}
+function settleSkeletons() {
+  for (const el of document.querySelectorAll('.skel')) {
+    if (!el.textContent) el.textContent = '–';
+    el.classList.remove('skel');
+  }
 }
 
 function formatDoel(s) {
@@ -191,8 +205,9 @@ const RESULT_FIELDS = ['r-bomen', 'r-bouwjaar', 'r-leeftijd', 'r-opp', 'r-pandid
   'r-postcode', 'r-buurt', 'r-wijk', 'r-gemeente', 'r-provincie', 'r-coords'];
 
 function resetResult() {
-  for (const id of RESULT_FIELDS) setField(id, null);
+  for (const id of RESULT_FIELDS) setLoading(id);
   $('r-leeftijd').textContent = '';
+  $('r-leeftijd').classList.remove('skel');
   $('r-bagviewer').parentElement.hidden = true;
   $('units-section').hidden = true;
   $('units').replaceChildren();
@@ -203,7 +218,7 @@ function resetResult() {
   $('heritage-section').hidden = true;
   $('solar-section').hidden = true;
   $('solar-table').tBodies[0].replaceChildren();
-  for (const id of ['r-monument', 'r-gezicht', 'r-monumenten-nabij']) setField(id, null);
+  for (const id of ['r-monument', 'r-gezicht', 'r-monumenten-nabij']) setLoading(id);
   $('years-section').hidden = true;
   $('years-chart').replaceChildren();
   for (const s of ['pand', 'perceel', 'buurt', 'scene3d', 'monumenten', 'bomen', 'lantaarns']) setLayerData(s, []);

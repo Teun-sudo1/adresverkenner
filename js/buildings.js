@@ -812,7 +812,6 @@ function savedTheme() {
 function setTheme(theme, save) {
   document.documentElement.dataset.theme = theme;
   if (save) try { localStorage.setItem(THEME_KEY, theme); } catch {}
-  $('theme').textContent = theme === 'dark' ? '☀' : '☾';
   $('theme').setAttribute('aria-label', theme === 'dark' ? 'Lichte modus' : 'Donkere modus');
   applyMapTheme();
 }

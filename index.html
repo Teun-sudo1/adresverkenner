@@ -17,6 +17,7 @@
   <link rel="preconnect" href="https://service.pdok.nl">
   <link rel="preconnect" href="https://api.pdok.nl">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5.2.8/index.css">
   <!-- All scripts are deferred: the page shows at once and they run in order once it's parsed. -->
   <script defer src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
@@ -38,25 +39,35 @@
       <div class="tile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>
         <h3>Rapport per adres</h3>
-        <p>Bouwjaar, oppervlakte, hoogte, perceel en buurtcijfers van het CBS. Ook te printen als pdf.</p>
+        <p>Bouwjaar, oppervlakte, hoogte, perceel, monumenten, klimaatrisico's, voorzieningen en buurtcijfers van het CBS. Ook te printen als pdf.</p>
       </div>
       <div class="tile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>
-        <h3>3D</h3>
-        <p>Bekijk de omgeving tot 250 m in 3D, met echte dakvormen dichtbij en bomen.</p>
+        <h3>3D, dag en nacht</h3>
+        <p>De omgeving tot 750 m in 3D met dakvormen, bomen en lantaarns. Kies een tijd voor zon en schaduw, of kijk vanaf het dak.</p>
       </div>
       <div class="tile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
-        <h3>Kleuren en filteren</h3>
-        <p>Kleur panden op bouwjaar, status of gebruiksdoel en verberg wat je niet wilt zien.</p>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>
+        <h3>Water en regen</h3>
+        <p>Zie hoe diep het water komt bij hevige regen of een overstroming, en of het nu regent bij het adres.</p>
       </div>
       <div class="tile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>
-        <h3>Water simuleren</h3>
-        <p>Zie hoe diep het water komt bij hevige regen of een overstroming, en laat het stijgen.</p>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V12h4v9"/><path d="M10 21V7h4v14"/><path d="M15 21V3h4v18"/></svg>
+        <h3>Groeikaart</h3>
+        <p>Zie een hele gemeente groeien, van vóór 1800 tot nu, periode na periode.</p>
+      </div>
+      <div class="tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></svg>
+        <h3>Lagen en gereedschap</h3>
+        <p>Kleur panden op bouwjaar of gebruik, toon geluid, lucht of hitte, meet afstanden en deel de kaart.</p>
+      </div>
+      <div class="tile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 3v18"/></svg>
+        <h3>Vergelijken en lijsten</h3>
+        <p>Zet twee adressen naast elkaar, of haal tot 200 adressen tegelijk op als CSV voor Excel.</p>
       </div>
     </div>
-    <p class="disclaimer">Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. De waterkaarten zijn modelscenario's: ze geven een indicatie, geen voorspelling voor een specifiek adres.</p>
+    <p class="disclaimer">Tip: klik ook gewoon op de kaart om het dichtstbijzijnde adres op te halen. Alle knoppen voor de kaart staan in de werkbalk linksboven; de taal (English) kies je bij Instellingen. De waterkaarten zijn modelscenario's: ze geven een indicatie, geen voorspelling voor een specifiek adres.</p>
     <button id="welcome-start" type="button">Naar de kaart</button>
   </div>
 </div>
@@ -129,12 +140,12 @@
   <aside id="panel">
     <button type="button" id="panel-handle" aria-expanded="true" aria-label="Rapport in- of uitklappen"><span></span></button>
     <div class="titlebar">
-      <h1>Adresverkenner</h1>
-      <button id="help" class="secondary" type="button" aria-label="Uitleg" title="Uitleg">?</button>
-      <button id="theme" class="secondary" type="button" aria-label="Donkere modus" title="Donker / licht">☾</button>
-      <button id="settings-btn" class="secondary" type="button" aria-label="Instellingen" title="Instellingen" aria-expanded="false" aria-controls="settings">⚙</button>
-      <button id="print" class="secondary" type="button" aria-label="Printen of opslaan als pdf" title="Print / PDF" hidden><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></button>
-      <button id="panel-hide" class="secondary" type="button" aria-label="Adresinfo verbergen" title="Adresinfo verbergen">×</button>
+      <h1><span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>Adresverkenner</h1>
+      <button id="help" class="icon-btn" type="button" aria-label="Uitleg" title="Uitleg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+      <button id="theme" class="icon-btn" type="button" aria-label="Donkere modus" title="Donker / licht"><svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg><svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button id="settings-btn" class="icon-btn" type="button" aria-label="Instellingen" title="Instellingen" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button>
+      <button id="print" class="icon-btn" type="button" aria-label="Printen of opslaan als pdf" title="Print / PDF" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></button>
+      <button id="panel-hide" class="icon-btn" type="button" aria-label="Adresinfo verbergen" title="Adresinfo verbergen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M16 15l-3-3 3-3"/></svg></button>
     </div>
     <div id="settings" class="popover" hidden>
       <fieldset>
@@ -151,6 +162,7 @@
       </fieldset>
     </div>
     <form id="search" autocomplete="off">
+      <span class="search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
       <input id="q" type="search" placeholder="Bijv. Damrak 1 Amsterdam" required
              role="combobox" aria-autocomplete="list" aria-controls="suggestions" aria-expanded="false">
       <button id="go" type="submit">Zoek</button>
@@ -169,8 +181,10 @@
 
     <div id="result" hidden>
       <img id="print-map" alt="Kaart van het adres">
-      <div class="address" id="r-address"></div>
-      <div class="sub" id="r-place"></div>
+      <header class="addr-head">
+        <div class="address" id="r-address"></div>
+        <div class="sub" id="r-place"></div>
+      </header>
 
       <div class="kpis">
         <div class="kpi"><div class="k">Bouwjaar</div><div class="v" id="r-bouwjaar">–</div><div class="s" id="r-leeftijd"></div></div>
@@ -297,69 +311,49 @@
     <canvas id="stars" aria-hidden="true"></canvas>
     <div id="roofview" class="mapctl" role="status" hidden><span id="roofview-text"></span><button type="button" id="roofview-stop">Stoppen</button></div>
     <canvas id="rain-canvas" aria-hidden="true"></canvas>
-    <button type="button" id="panel-show" class="mapctl" aria-controls="panel">Adresinfo</button>
-    <div id="layers" class="mapctl" role="group" aria-label="Achtergrondkaart">
-      <button type="button" data-layer="brt" aria-pressed="true">Kaart</button>
-      <button type="button" data-layer="luchtfoto" aria-pressed="false">Luchtfoto</button>
+    <button type="button" id="panel-toggle" aria-controls="panel" aria-expanded="true" aria-label="Adresinfo inklappen" title="Adresinfo in- of uitklappen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button type="button" id="panel-show" class="mapctl glass" aria-controls="panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M14 9l3 3-3 3"/></svg><span>Adresinfo</span></button>
+    <!-- One toolbar for the map: base map, views, Groeikaart and the drawer with layers and tools.
+         On narrow maps the labels fold away and only the icons remain. -->
+    <div id="toolbar" class="mapctl glass" role="toolbar" aria-label="Kaart en weergave">
+      <div id="layers" class="tb-group" role="group" aria-label="Achtergrondkaart">
+        <button type="button" data-layer="brt" aria-pressed="true" title="Kaart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span class="lbl">Kaart</span></button>
+        <button type="button" data-layer="luchtfoto" aria-pressed="false" title="Luchtfoto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg><span class="lbl">Luchtfoto</span></button>
+      </div>
+      <div id="view-btns" class="tb-group" role="group" aria-label="Weergave">
+        <button type="button" id="view3d" aria-pressed="false" title="Toon panden in 3D rond het adres"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg><span class="lbl">3D</span></button>
+        <button type="button" id="sun-toggle" aria-pressed="false" title="Schaduwen en zonuren (zet 3D aan)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="lbl">Zon</span></button>
+        <button type="button" id="rain-live-toggle" aria-pressed="false" title="Live regenradar, regen nu en de komende 2 uur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M16 14v6M8 14v6M12 16v6"/></svg><span class="lbl">Regen</span></button>
+        <button type="button" id="flood-toggle" aria-pressed="false" title="Overstroming of hevige regen simuleren rond het adres"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg><span class="lbl">Overstroming</span></button>
+      </div>
+      <div class="tb-group">
+        <button type="button" id="groei-open" title="Groeikaart: zie een hele gemeente groeien, periode na periode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V12h4v9"/><path d="M10 21V7h4v14"/><path d="M15 21V3h4v18"/></svg><span class="lbl">Groeikaart</span></button>
+        <button type="button" id="controls-toggle" aria-expanded="false" aria-controls="drawer" title="Kleur panden, layers, meten, opslaan en delen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></svg><span class="lbl">Lagen en gereedschap</span></button>
+      </div>
     </div>
-    <button type="button" id="groei-open" class="mapctl" title="Groeikaart: zie een hele gemeente groeien, periode na periode">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V12h4v9"/><path d="M10 21V7h4v14"/><path d="M15 21V3h4v18"/></svg>
-      <span>Groeikaart</span>
-    </button>
-    <div id="view-btns" class="mapctl" role="group" aria-label="Weergave">
-      <button type="button" id="view3d" aria-pressed="false" title="Toon panden in 3D rond het adres">3D</button>
-      <button type="button" id="sun-toggle" aria-pressed="false" title="Schaduwen en zonuren (zet 3D aan)">Zon</button>
-      <button type="button" id="rain-live-toggle" aria-pressed="false" title="Live regenradar, regen nu en de komende 2 uur">Regen</button>
-      <button type="button" id="flood-toggle" aria-pressed="false" title="Overstroming of hevige regen simuleren rond het adres">Overstroming</button>
-    </div>
-    <button type="button" id="controls-toggle" class="mapctl" aria-expanded="false" aria-controls="map-controls">Opties</button>
-    <!-- Map controls; on a phone they fold into one scrollable sheet behind "Opties". -->
+    <!-- Map panels; on a phone they fold into one scrollable sheet behind "Lagen en gereedschap". -->
     <div id="map-controls">
-      <div id="sun" class="mapctl" hidden>
-        <label for="sun-date" id="sun-title">Tijd</label>
-        <div class="row">
-          <input id="sun-date" type="date">
-          <span id="sun-clock">12:00</span>
-        </div>
-        <div class="row">
-          <button id="sun-play" type="button" aria-label="Speel een dag af">▶</button>
-          <input id="sun-time" type="range" min="0" max="1435" step="5" aria-label="Tijdstip">
-        </div>
-        <div id="sun-info" class="hint"></div>
-        <div class="row" id="sunhours-row" hidden><button id="sunhours-btn" type="button" class="secondary" aria-pressed="false">Zonuren op deze dag</button></div>
-        <div id="sunhours-legend" hidden>
-          <div class="ramp sun-ramp"></div>
-          <div class="ramp-labels"><span>0 uur</span><span id="sunhours-max"></span></div>
-        </div>
-        <div id="sunhours-info" class="hint"></div>
-      </div>
-      <div id="right-stack">
-        <div id="tools" class="mapctl">
-          <label>Meten</label>
-          <div class="seg" role="group" aria-label="Meten">
-            <button type="button" id="measure-dist" aria-pressed="false">Afstand</button>
-            <button type="button" id="measure-area" aria-pressed="false">Oppervlakte</button>
-          </div>
-          <div id="measure-panel" hidden>
-            <div id="measure-result"></div>
-            <div id="measure-hint" class="hint"></div>
-            <button type="button" class="link" id="measure-clear">Meting wissen</button>
-          </div>
-          <button type="button" id="save-image" class="full">Kaart opslaan als afbeelding</button>
-          <button type="button" id="share-link" class="full" title="De link onthoudt het adres en de weergave: kaarthoek, 3D, zon, water, layer en regen">Link naar deze weergave delen</button>
-        </div>
-        <div id="envlayer" class="mapctl">
-          <label for="env-layer">Layers</label>
-          <select id="env-layer"><option value="">Geen</option></select>
-          <div id="env-legend" hidden>
-            <img id="env-legend-img" alt="">
-            <div id="env-source" class="hint"></div>
-          </div>
-        </div>
-      </div>
       <div id="left-stack">
+        <div id="sun" class="mapctl" hidden>
+          <label for="sun-date" id="sun-title">Tijd</label>
+          <div class="row">
+            <input id="sun-date" type="date">
+            <span id="sun-clock">12:00</span>
+          </div>
+          <div class="row">
+            <button id="sun-play" type="button" aria-label="Speel een dag af">▶</button>
+            <input id="sun-time" type="range" min="0" max="1435" step="5" aria-label="Tijdstip">
+          </div>
+          <div id="sun-info" class="hint"></div>
+          <div class="row" id="sunhours-row" hidden><button id="sunhours-btn" type="button" class="secondary" aria-pressed="false">Zonuren op deze dag</button></div>
+          <div id="sunhours-legend" hidden>
+            <div class="ramp sun-ramp"></div>
+            <div class="ramp-labels"><span>0 uur</span><span id="sunhours-max"></span></div>
+          </div>
+          <div id="sunhours-info" class="hint"></div>
+        </div>
         <div id="rainlive" class="mapctl" hidden>
-          <div class="panel-head"><span>Regen nu</span><button type="button" class="link" id="rainlive-close" aria-label="Regen sluiten">×</button></div>
+          <div class="panel-head"><span>Regen nu</span><button type="button" class="icon-btn" id="rainlive-close" aria-label="Regen sluiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
           <div id="rain-now" class="rain-now" aria-live="polite"></div>
           <div class="row">
             <button type="button" id="radar-play" aria-label="Radarbeelden pauzeren">❚❚</button>
@@ -376,7 +370,7 @@
           <p class="hint">Radar: RainViewer, verwachting: Open-Meteo (KNMI-model).</p>
         </div>
         <div id="flood" class="mapctl" hidden>
-          <div class="panel-head"><span>Overstroming</span><button type="button" class="link" id="flood-close" aria-label="Overstroming sluiten">×</button></div>
+          <div class="panel-head"><span>Overstroming</span><button type="button" class="icon-btn" id="flood-close" aria-label="Overstroming sluiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
           <div id="flood-nap" hidden></div>
           <label for="flood-scenario" class="sublabel">Scenario</label>
           <select id="flood-scenario">
@@ -407,19 +401,44 @@
             <details class="hint"><summary>Wat is de piek?</summary><div id="flood-explain"></div></details>
           </div>
         </div>
-      </div>
-      <div id="legend" class="mapctl">
-        <label for="color-by">Kleur panden op</label>
-        <select id="color-by">
-          <option value="bouwjaar">Bouwjaar</option>
-          <option value="status">Status</option>
-          <option value="functie">Gebruiksdoel</option>
-          <option value="zon">Zonnepotentie daken (3D)</option>
-          <option value="">Geen</option>
-        </select>
-        <ul id="legend-items"></ul>
-        <div class="hint" id="legend-filter-hint">Klik een categorie aan of uit om panden te filteren.</div>
-        <div class="hint" id="legend-hint">Zoom verder in om de panden te zien.</div>
+        <aside id="drawer" class="mapctl glass" aria-label="Lagen en gereedschap">
+          <div class="drawer-head"><h2>Lagen en gereedschap</h2><button type="button" id="drawer-close" class="icon-btn" aria-label="Sluiten" title="Sluiten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+          <section id="legend" class="drawer-sec">
+            <label for="color-by">Kleur panden op</label>
+            <select id="color-by">
+              <option value="bouwjaar">Bouwjaar</option>
+              <option value="status">Status</option>
+              <option value="functie">Gebruiksdoel</option>
+              <option value="zon">Zonnepotentie daken (3D)</option>
+              <option value="">Geen</option>
+            </select>
+            <ul id="legend-items"></ul>
+            <div class="hint" id="legend-filter-hint">Klik een categorie aan of uit om panden te filteren.</div>
+            <div class="hint" id="legend-hint">Zoom verder in om de panden te zien.</div>
+          </section>
+          <section id="envlayer" class="drawer-sec">
+            <label for="env-layer">Layers</label>
+            <select id="env-layer"><option value="">Geen</option></select>
+            <div id="env-legend" hidden>
+              <img id="env-legend-img" alt="">
+              <div id="env-source" class="hint"></div>
+            </div>
+          </section>
+          <section id="tools" class="drawer-sec">
+            <label>Meten</label>
+            <div class="seg" role="group" aria-label="Meten">
+              <button type="button" id="measure-dist" aria-pressed="false">Afstand</button>
+              <button type="button" id="measure-area" aria-pressed="false">Oppervlakte</button>
+            </div>
+            <div id="measure-panel" hidden>
+              <div id="measure-result"></div>
+              <div id="measure-hint" class="hint"></div>
+              <button type="button" class="link" id="measure-clear">Meting wissen</button>
+            </div>
+            <button type="button" id="save-image" class="full">Kaart opslaan als afbeelding</button>
+            <button type="button" id="share-link" class="full" title="De link onthoudt het adres en de weergave: kaarthoek, 3D, zon, water, layer en regen">Link naar deze weergave delen</button>
+          </section>
+        </aside>
       </div>
     </div>
   </div>
