@@ -25,8 +25,9 @@ async function loadHeight(pandId, stale) {
     const own = parseLod22({ metadata: item.metadata, features: [item.feature] }).find(([id]) => id === pandId);
     renderSolar(own?.[1]);
   } catch (err) {
-    // 404 means the pand isn't in 3D BAG yet (e.g. very new buildings).
-    if (!stale()) setField('r-hoogte', 'niet beschikbaar');
+    // 404 means the pand isn't in 3D BAG yet (e.g. very new buildings);
+    // anything else is 3D BAG itself not answering.
+    if (!stale()) setField('r-hoogte', /HTTP 404/.test(err.message) ? 'niet beschikbaar' : 'niet beschikbaar (3D BAG reageert niet)');
   }
 }
 

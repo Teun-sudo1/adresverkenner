@@ -86,15 +86,18 @@ function track(promise) {
 }
 // Public data services sometimes drop a connection or answer a one-off server
 // error; try once more before giving up. Also used inside the water worker.
+// A service that doesn't answer at all is given up after 30 s per attempt,
+// so the report shows "niet beschikbaar" instead of waiting for minutes.
 async function fetchWithRetry(url, init) {
+  const attempt = () => fetch(url, init?.signal || typeof AbortSignal.timeout !== 'function' ? init : { ...init, signal: AbortSignal.timeout(30000) });
   try {
-    const res = await fetch(url, init);
+    const res = await attempt();
     if (res.status < 500) return res;
   } catch (err) {
     if (init?.signal?.aborted) throw err;
   }
   await new Promise(r => setTimeout(r, 800));
-  return fetch(url, init);
+  return attempt();
 }
 
 // ---------- Response cache ----------

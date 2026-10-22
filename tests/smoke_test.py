@@ -19,6 +19,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -93,7 +94,9 @@ class Browser:
             d = m['params']['exceptionDetails']
             self.errors.append('exception: ' + d.get('exception', {}).get('description', d.get('text', '')))
         elif method == 'Runtime.consoleAPICalled' and m['params']['type'] == 'error':
-            self.errors.append('console.error: ' + ' '.join(str(a.get('value', a.get('description', ''))) for a in m['params']['args']))
+            text = 'console.error: ' + ' '.join(str(a.get('value', a.get('description', ''))) for a in m['params']['args'])
+            # A service that didn't answer (no connection, timed out) is a network hiccup, not a bug in the app.
+            (self.network if NETWORK_FAILURE.search(text) else self.errors).append(text)
         elif method == 'Log.entryAdded' and m['params']['entry']['level'] == 'error':
             e = m['params']['entry']
             if 'favicon' in e.get('url', ''):
@@ -153,20 +156,67 @@ class Browser:
             shutil.rmtree(self.profile, ignore_errors=True)
 
 
+# Outside sources whose outage would fail many checks at once. They're probed
+# before the run; checks that need a source that is down count as a warning.
+SOURCES = {
+    '3D BAG': ['https://api.3dbag.nl/collections/pand/items/NL.IMBAG.Pand.0363100012169583',
+               'https://data.3dbag.nl/api/BAG3D/wfs?service=WFS&version=2.0.0&request=GetCapabilities'],
+}
+DOWN = set()
+NETWORK_FAILURE = re.compile(r'Failed to fetch|signal timed out|TimeoutError|NetworkError|ERR_CONNECTION|ERR_TIMED_OUT|ERR_NAME_NOT_RESOLVED')
+
+
+def probe_sources():
+    # Each URL gets a hard 25 s limit, in a daemon thread: a server that half
+    # answers can keep urllib waiting far beyond its socket timeout, and such a
+    # thread mustn't hold up the end of the run either.
+    import threading
+
+    def answers(url, out):
+        try:
+            with urllib.request.urlopen(url, timeout=20) as res:
+                out.append(res.status < 500)
+        except Exception:
+            out.append(False)
+
+    for name, urls in SOURCES.items():
+        for url in urls:
+            out = []
+            t = threading.Thread(target=answers, args=(url, out), daemon=True)
+            t.start()
+            t.join(25)
+            if not (out and out[0]):
+                DOWN.add(name)
+                break
+    for name in sorted(DOWN):
+        print(f'LET OP: {name} reageert niet; controles die {name} nodig hebben, tellen als waarschuwing.', flush=True)
+
+
 class Results:
     def __init__(self):
         self.items = []
+        self.skipped = []
 
-    def check(self, name, ok, detail=''):
+    def check(self, name, ok, detail='', needs=None):
+        if not ok and needs in DOWN:
+            self.skipped.append((name, needs))
+            print(f"  LET OP {name}  ({needs} reageert niet)", flush=True)
+            return ok
         self.items.append((name, bool(ok), detail))
         print(f"  {'OK  ' if ok else 'FOUT'} {name}{f'  ({detail})' if detail else ''}", flush=True)
         return ok
 
+    def skip(self, name, needs):
+        self.skipped.append((name, needs))
+        print(f"  LET OP {name} overgeslagen  ({needs} reageert niet)", flush=True)
+
 
 def open_address(b, base_url, address_id):
     b.send('Page.navigate', {'url': f'{base_url}?id={address_id}'})
+    # The height comes from 3D BAG, the construction year from BAG; wait for the height unless 3D BAG is down.
+    field = 'r-bouwjaar' if '3D BAG' in DOWN else 'r-hoogte'
     ready = b.wait_for("typeof loadAddress === 'function' && typeof pendingLoads !== 'undefined' "
-                       "&& !['', '–'].includes(document.getElementById('r-hoogte').textContent)", 90)
+                       f"&& !['', '–'].includes(document.getElementById('{field}').textContent)", 90)
     # Let the slower sections (heritage, years, CBS, environment) arrive too.
     b.wait_for('pendingLoads === 0', 90)
     b.js("setTheme('light', true); localStorage.setItem('adresrapport.welcomeSeen', '1')")
@@ -265,7 +315,7 @@ def test_analysis(b, r, key):
         b.wait_for('window.__cells !== null', 5)
         cells = b.js('window.__cells')
         b.screenshot(f'{key}-heatmap-{metric}')
-        r.check(f'{key}: heatmap {metric}', (cells or 0) > 30, b.js("document.getElementById('heat-info').textContent"))
+        r.check(f'{key}: heatmap {metric}', (cells or 0) > 30, b.js("document.getElementById('heat-info').textContent"), needs='3D BAG')
     b.js("(() => { const s = document.getElementById('heat-metric'); s.value = ''; s.dispatchEvent(new Event('change')); })()")
     # Walking rings with what lies within them, then cycling.
     b.js("(() => { const c = document.getElementById('walk-show'); c.checked = true; c.dispatchEvent(new Event('change')); })()")
@@ -281,14 +331,15 @@ def test_analysis(b, r, key):
 def test_report(b, r, key):
     r.check(f'{key}: adres geladen', b.js("document.getElementById('r-address').textContent"))
     for section in ('heritage-section', 'years-section', 'env-section', 'cbs-section'):
-        r.check(f'{key}: {section} zichtbaar', not b.js(f"document.getElementById('{section}').hidden"))
+        r.check(f'{key}: {section} zichtbaar', not b.js(f"document.getElementById('{section}').hidden"),
+                needs='3D BAG' if section == 'years-section' else None)
     r.check(f'{key}: bomen geteld', b.js("document.getElementById('r-bomen').textContent") not in ('–', 'niet beschikbaar'),
             b.js("document.getElementById('r-bomen').textContent"))
     # Sidebar: sections folded with a one-line summary each.
     b.pump(1)
     sums = b.js("[...document.querySelectorAll('details.section:not([hidden])')].map(d => d.dataset.key + ': ' + d.querySelector('.sum').textContent)")
     empty = [s for s in sums if s.endswith(': ')]
-    r.check(f'{key}: samenvattingen in de zijbalk', sums and not empty, '; '.join(sums)[:220] if not empty else f'leeg: {empty}')
+    r.check(f'{key}: samenvattingen in de zijbalk', sums and not empty, '; '.join(sums)[:220] if not empty else f'leeg: {empty}', needs='3D BAG')
     cmp = b.js("[...document.querySelectorAll('#cbs .cmp')].map(e => e.textContent)")
     r.check(f'{key}: buurt vergeleken met gemeente en NL', len(cmp) >= 8 and all('NL' in c or 'gemeente' in c for c in cmp), (cmp or ['geen'])[0])
     b.wait_for("!document.getElementById('amenities-section').hidden", 60)
@@ -557,6 +608,7 @@ def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
     print(f'Test van {args.url}', flush=True)
 
+    probe_sources()
     b = Browser(args.chrome)
     r = Results()
     try:
@@ -568,18 +620,22 @@ def main():
                 continue
             test_report(b, r, key)
             b.screenshot(f'{key}-rapport')
+            needs_3d = '3D BAG' in DOWN
             if key == 'rotterdam':
-                test_flight(b, r, key)
+                if needs_3d: r.skip(f'{key}: rondvlucht en tijd in 3D', '3D BAG')
+                else: test_flight(b, r, key)
                 test_water_rises(b, r, key, 'regen70')
                 test_water_rises(b, r, key, 'ov_kleine')
             if key == 'prinsengracht':
                 test_tools(b, r, key)
                 test_analysis(b, r, key)
                 test_growth(b, r, key)
-            test_3d(b, r, key, with_night=(key == 'prinsengracht'))
+            if needs_3d: r.skip(f'{key}: 3D-scène, bomen, water en nacht in 3D', '3D BAG')
+            else: test_3d(b, r, key, with_night=(key == 'prinsengracht'))
             if key == 'damrak':
                 test_english(b, r, key, args.url)
-                test_roof_view(b, r, key)
+                if needs_3d: r.skip(f'{key}: uitzicht vanaf het dak', '3D BAG')
+                else: test_roof_view(b, r, key)
                 test_share(b, r, key, args.url)
                 test_compare_bulk(b, r, key)
     except (websocket.WebSocketConnectionClosedException, ConnectionError) as err:
@@ -590,6 +646,8 @@ def main():
 
     failed = [i for i in r.items if not i[1]]
     print(f'\n{len(r.items) - len(failed)} van {len(r.items)} controles geslaagd.')
+    if r.skipped:
+        print(f"{len(r.skipped)} controle(s) als waarschuwing, omdat {', '.join(sorted({n for _, n in r.skipped}))} niet reageerde.")
     if b.errors:
         print(f'{len(b.errors)} fout(en) in de console:')
         for e in b.errors[:20]:
