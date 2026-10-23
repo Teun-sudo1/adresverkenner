@@ -511,8 +511,8 @@ def test_growth(b, r, key):
         return n; })()""")
     b.wait_for('growth.counts !== null', 60)
     counts = b.js('growth.counts')
-    r.check(f'{key}: groeikaart telt panden per periode', counts and len(counts) == 11 and sum(counts) > 100000, f'{sum(counts or [])} panden')
-    r.check(f'{key}: groeikaart speelt af voor de gemeente', ok and lit > 2000, f'{lit} gekleurde pixels, titel {b.js("document.getElementById('groei-title').textContent")}')
+    r.check(f'{key}: groeikaart telt panden per periode', counts and len(counts) == 11 and sum(counts) > 100000, f'{sum(counts or [])} panden', needs='3D BAG')
+    r.check(f'{key}: groeikaart speelt af voor de gemeente', ok and lit > 2000, f'{lit} gekleurde pixels, titel {b.js("document.getElementById('groei-title').textContent")}', needs='3D BAG')
     b.screenshot(f'{key}-groeikaart')
     b.js("document.getElementById('groei-close').click()")
 

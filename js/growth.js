@@ -239,7 +239,8 @@ async function countPerEra(naam, polys) {
     const cql = encodeURIComponent(`INTERSECTS(geom,${wkt}) AND `) + eraFilter(e);
     const url = `${GROWTH_WMS.replace('/wms', '/wfs')}?service=WFS&version=2.0.0&request=GetFeature&typeNames=BAG3D:lod12&resultType=hits&CQL_FILTER=${cql}`;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const n = await fetchWithRetry(url).then(r => r.text()).then(t => t.match(/numberMatched="(\d+)"/)?.[1]).catch(() => null);
+      // No answer at all (no connection, timed out): retrying won't help.
+      const n = await fetchWithRetry(url).then(r => r.text()).then(t => t.match(/numberMatched="(\d+)"/)?.[1]);
       if (n != null) return Number(n);
       await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
     }
@@ -260,8 +261,10 @@ async function countPerEra(naam, polys) {
     renderTimeline();
     showEra(growth.shown);
   } catch (err) {
-    // The map works without the bars.
-    console.error(err);
+    // The bars and the buildings both come from 3D BAG; when it doesn't
+    // answer, say so instead of showing an empty map.
+    console.warn(err);
+    if (growth.gemeente === naam) setGrowthStatus('De panden komen van de 3D BAG (TU Delft), die nu niet reageert. Probeer het later opnieuw.', true);
   }
 }
 
